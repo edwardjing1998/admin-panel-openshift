@@ -1,0 +1,25 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: admin-panel
+  labels:
+    app: admin-panel
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: admin-panel
+  labels:
+    app: admin-panel
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: admin-panel:latest
+  triggers: []

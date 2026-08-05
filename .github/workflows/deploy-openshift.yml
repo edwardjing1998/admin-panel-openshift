@@ -1,0 +1,261 @@
+name: Deploy Admin Panel to OpenShift
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "public/**"
+      - "openshift/**"
+      - "Dockerfile"
+      - "nginx.conf"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-openshift.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    environment: staging
+
+    env:
+      APP_NAME: admin-panel
+      OPENSHIFT_SERVER: ${{ secrets.OPENSHIFT_SERVER }}
+      OPENSHIFT_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+      OPENSHIFT_NAMESPACE: ${{ secrets.OPENSHIFT_NAMESPACE }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate production build
+        env:
+          CI: "true"
+        run: npm run build
+
+      - name: Install OpenShift CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OC_DOWNLOAD_DIR="$RUNNER_TEMP/openshift-client"
+          OC_INSTALL_DIR="$HOME/.local/bin"
+          OC_ARCHIVE="$OC_DOWNLOAD_DIR/openshift-client-linux.tar.gz"
+          OC_DOWNLOAD_URL="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest-4.18/openshift-client-linux.tar.gz"
+
+          mkdir -p "$OC_DOWNLOAD_DIR" "$OC_INSTALL_DIR"
+
+          curl \
+            --fail \
+            --location \
+            --retry 5 \
+            --retry-delay 5 \
+            --connect-timeout 30 \
+            --output "$OC_ARCHIVE" \
+            "$OC_DOWNLOAD_URL"
+
+          tar \
+            --extract \
+            --gzip \
+            --file "$OC_ARCHIVE" \
+            --directory "$OC_DOWNLOAD_DIR"
+
+          test -f "$OC_DOWNLOAD_DIR/oc" || {
+            echo "The downloaded archive does not contain the oc executable."
+            exit 1
+          }
+
+          install \
+            --mode=0755 \
+            "$OC_DOWNLOAD_DIR/oc" \
+            "$OC_INSTALL_DIR/oc"
+
+          echo "$OC_INSTALL_DIR" >> "$GITHUB_PATH"
+
+          "$OC_INSTALL_DIR/oc" version --client
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for variable_name in \
+            OPENSHIFT_SERVER \
+            OPENSHIFT_TOKEN \
+            OPENSHIFT_NAMESPACE; do
+            if [ -z "${!variable_name:-}" ]; then
+              echo "Missing required GitHub environment secret: $variable_name"
+              exit 1
+            fi
+          done
+
+          echo "::add-mask::$OPENSHIFT_TOKEN"
+
+      - name: Log in to OpenShift
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          oc login "$OPENSHIFT_SERVER" \
+            --token="$OPENSHIFT_TOKEN" \
+            --insecure-skip-tls-verify=true
+
+          oc project "$OPENSHIFT_NAMESPACE"
+
+          echo "Authenticated OpenShift user:"
+          oc whoami
+
+          echo "Selected OpenShift project:"
+          oc project --short
+
+          echo "OpenShift client and server versions:"
+          oc version
+
+      - name: Apply OpenShift build resources
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          oc apply -f openshift/buildconfig.yml
+
+          echo "OpenShift ImageStream:"
+          oc get imagestream "$APP_NAME"
+
+          echo "OpenShift BuildConfig:"
+          oc get buildconfig "$APP_NAME"
+
+      - name: Build image inside OpenShift
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          oc start-build "$APP_NAME" \
+            --from-dir=. \
+            --follow \
+            --wait
+
+          echo "Recent OpenShift builds:"
+          oc get builds \
+            --sort-by=.metadata.creationTimestamp |
+          tail -n 10
+
+      - name: Apply OpenShift runtime resources
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          envsubst < openshift/deployment.yml |
+          oc apply -f -
+
+          oc apply -f openshift/service.yml
+          oc apply -f openshift/route.yml
+
+      - name: Restart and verify deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          oc rollout restart "deployment/$APP_NAME"
+
+          oc rollout status \
+            "deployment/$APP_NAME" \
+            --timeout=5m
+
+          echo "Deployment:"
+          oc get deployment "$APP_NAME"
+
+          echo "Pods:"
+          oc get pods \
+            -l "app=$APP_NAME" \
+            -o wide
+
+          echo "Service:"
+          oc get service "$APP_NAME"
+
+          echo "Route:"
+          oc get route "$APP_NAME"
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ROUTE_HOST="$(
+            oc get route "$APP_NAME" \
+              -o jsonpath='{.spec.host}'
+          )"
+
+          test -n "$ROUTE_HOST" || {
+            echo "OpenShift Route host is empty."
+            exit 1
+          }
+
+          APP_URL="https://${ROUTE_HOST}"
+
+          echo "Testing application health endpoint: $APP_URL/healthz"
+
+          curl \
+            --fail-with-body \
+            --retry 10 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            "$APP_URL/healthz"
+
+          echo
+          echo "Application URL: $APP_URL"
+          echo "OpenShift smoke test completed successfully."
+
+      - name: Show diagnostics after failure
+        if: failure()
+        shell: bash
+        run: |
+          echo "Workflow failed. Collecting available diagnostics."
+
+          if ! command -v oc >/dev/null 2>&1; then
+            echo "The oc command is unavailable."
+            exit 0
+          fi
+
+          if ! oc whoami >/dev/null 2>&1; then
+            echo "Not authenticated to OpenShift."
+            exit 0
+          fi
+
+          echo "Recent builds:"
+          oc get builds \
+            --sort-by=.metadata.creationTimestamp |
+          tail -n 10 || true
+
+          echo "Pods:"
+          oc get pods \
+            -l "app=$APP_NAME" \
+            -o wide || true
+
+          echo "Deployment:"
+          oc describe \
+            "deployment/$APP_NAME" || true
+
+          echo "Recent events:"
+          oc get events \
+            --sort-by=.lastTimestamp |
+          tail -n 50 || true
+
+          echo "Application logs:"
+          oc logs \
+            "deployment/$APP_NAME" \
+            --tail=200 || true
