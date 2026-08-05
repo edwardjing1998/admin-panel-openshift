@@ -14,12 +14,24 @@ metadata:
 spec:
   source:
     type: Binary
+
   strategy:
     type: Docker
     dockerStrategy:
       dockerfilePath: Dockerfile
+
   output:
     to:
       kind: ImageStreamTag
       name: admin-panel:latest
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+  completionDeadlineSeconds: 1200
   triggers: []
