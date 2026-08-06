@@ -1,0 +1,54 @@
+[
+    {
+      "id": "getting-started",
+      "label": "Getting started",
+      "summary": "Minimums, account setup, and choosing an investment.",
+      "questions": [
+        {
+          "id": "minimum-investment",
+          "question": "What is the minimum amount of money I can invest?",
+          "answer": "The minimum amount of money you can invest is $1,000."
+        },
+        {
+          "id": "choose-product",
+          "question": "How do I choose an investment product?",
+          "answer": "Start with your financial goal, time horizon, and risk tolerance. Our team can help you compare the available products."
+        }
+      ]
+    },
+    {
+      "id": "products-management",
+      "label": "Products & management",
+      "summary": "Available products and how portfolios are managed.",
+      "questions": [
+        {
+          "id": "product-types",
+          "question": "What types of investment products do you offer?",
+          "answer": "We offer stocks, bonds, mutual funds, and tailored portfolios designed for a range of investment objectives."
+        },
+        {
+          "id": "professional-management",
+          "question": "Is my investment portfolio managed by professionals?",
+          "answer": "Yes. Our experienced financial professionals actively manage portfolios with the goal of balancing returns and risk."
+        }
+      ]
+    },
+    {
+      "id": "access-timing",
+      "label": "Access & timing",
+      "summary": "Withdrawals, access rules, and investment duration.",
+      "questions": [
+        {
+          "id": "fund-access",
+          "question": "How often can I access my investment funds?",
+          "answer": "You can request access to your funds at any time, subject to the terms and conditions of the investment product you selected."
+        },
+        {
+          "id": "investment-duration",
+          "question": "What is the typical investment duration for your products?",
+          "answer": "Durations vary. We offer both short-term and long-term options so you can select a time horizon that fits your financial goals."
+        }
+      ]
+    }
+  ]
+  

@@ -1,0 +1,66 @@
+[
+  {
+    "id": "minimum-investment",
+    "title": "Minimum investment",
+    "updatedAt": "Today, 10:42 AM",
+    "group": "Today",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the minimum amount I can invest?"
+      },
+      {
+        "role": "assistant",
+        "content": "The minimum amount of money you can invest is $1,000."
+      }
+    ]
+  },
+  {
+    "id": "portfolio-options",
+    "title": "Portfolio options",
+    "updatedAt": "Today, 9:15 AM",
+    "group": "Today",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What investment products are available?"
+      },
+      {
+        "role": "assistant",
+        "content": "We offer stocks, bonds, mutual funds, and tailored portfolios designed for different investment objectives."
+      }
+    ]
+  },
+  {
+    "id": "fund-access",
+    "title": "Accessing my funds",
+    "updatedAt": "Yesterday, 3:28 PM",
+    "group": "Yesterday",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Can I access my investment funds at any time?"
+      },
+      {
+        "role": "assistant",
+        "content": "You can request access at any time, subject to the terms and conditions of your selected investment product."
+      }
+    ]
+  },
+  {
+    "id": "investment-duration",
+    "title": "Investment duration",
+    "updatedAt": "Jul 31, 2026",
+    "group": "Previous 7 days",
+    "messages": [
+      {
+        "role": "user",
+        "content": "How long should I keep an investment?"
+      },
+      {
+        "role": "assistant",
+        "content": "The appropriate duration depends on your financial goal. Both short-term and long-term products are available."
+      }
+    ]
+  }
+]
