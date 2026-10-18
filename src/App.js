@@ -13,6 +13,7 @@ import Form from "./scenes/Form";
 import Line from "./scenes/Line";
 import Pie from "./scenes/Pie";
 import Faq from "./scenes/Faq";
+import AiLearningGame from "./scenes/AiLearningGame";
 import Geography from "./scenes/Geography";
 import Calendar from "./scenes/Calendar";
 function App() {
@@ -32,6 +33,7 @@ function App() {
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/faq" element={<Faq />} />
+              <Route path="/ai-learning-game" element={<AiLearningGame />} />
               <Route path="/bar" element={<Bar />} />
               <Route path="/form" element={<Form />} />
               <Route path="/line" element={<Line />} />
