@@ -5,6 +5,10 @@ import {
   Box,
   CircularProgress,
   IconButton,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Paper,
   TextField,
   Tooltip,
@@ -17,6 +21,8 @@ import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import { tokens } from "../theme";
 import { sendAiMessage } from "../services/aiChatService";
+import { searchEducation } from "../services/educationSearchService";
+import EducationSearchResults from "./EducationSearchResults";
 
 export const welcomeMessage = {
   role: "assistant",
@@ -24,7 +30,7 @@ export const welcomeMessage = {
     "Hello! I can help answer questions about your investments. What would you like to know?",
 };
 
-function AiChatPanel({ conversation, onMessagesChange }) {
+function AiChatPanel({ conversation, onMessagesChange, onSubjectChange }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -32,6 +38,7 @@ function AiChatPanel({ conversation, onMessagesChange }) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const selectedSubject = conversation.subject || "legacy";
 
   const messagesEndRef = useRef(null);
 
@@ -83,10 +90,14 @@ function AiChatPanel({ conversation, onMessagesChange }) {
     setIsLoading(true);
 
     try {
-      const apiResult = await sendAiMessage({
-        message,
-        history,
-      });
+      const apiResult = selectedSubject === "legacy"
+        ? await sendAiMessage({ message, history })
+        : await searchEducation({
+            message,
+            subject: selectedSubject,
+            searchIntent: "auto",
+            topK: 10,
+          });
 
       /*
        * sendAiMessage might return either:
@@ -136,6 +147,10 @@ function AiChatPanel({ conversation, onMessagesChange }) {
         evidence: Array.isArray(normalizedResult.evidence)
           ? normalizedResult.evidence
           : [],
+        educationResults: Array.isArray(normalizedResult.results)
+          ? normalizedResult.results
+          : [],
+        subject: selectedSubject,
       };
 
       updateMessages([
@@ -313,6 +328,10 @@ function AiChatPanel({ conversation, onMessagesChange }) {
                   {displayContent}
                 </Typography>
 
+                {!isUser && Array.isArray(message.educationResults) && (
+                  <EducationSearchResults results={message.educationResults} />
+                )}
+
                 {!isUser &&
                   typeof message.traceId === "string" &&
                   message.traceId && (
@@ -378,6 +397,19 @@ function AiChatPanel({ conversation, onMessagesChange }) {
           minWidth: 0,
         }}
       >
+        <FormControl fullWidth size="small" sx={{ mb: 1.5 }} disabled={isLoading}>
+          <InputLabel id="ai-service-label">AI service</InputLabel>
+          <Select
+            labelId="ai-service-label"
+            label="AI service"
+            value={selectedSubject}
+            onChange={(event) => onSubjectChange(conversation.id, event.target.value)}
+          >
+            <MenuItem value="legacy">AT&amp;T Billing / Policy</MenuItem>
+            <MenuItem value="bible">Bible</MenuItem>
+            <MenuItem value="mathematics">Mathematics</MenuItem>
+          </Select>
+        </FormControl>
         {error && (
           <Alert
             severity="error"

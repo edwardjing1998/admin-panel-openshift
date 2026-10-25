@@ -22,7 +22,9 @@ const historyGroupOrder = ["Today", "Yesterday", "Previous 7 days"];
 function Faq() {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [conversations, setConversations] = useState(initialChatHistories);
+  const [conversations, setConversations] = useState(
+    initialChatHistories.map((item) => ({ ...item, subject: item.subject || "legacy" }))
+  );
   const [selectedId, setSelectedId] = useState(initialChatHistories[0].id);
 
   const selectedConversation =
@@ -46,6 +48,7 @@ function Faq() {
       title: "New conversation",
       updatedAt: "Just now",
       group: "Today",
+      subject: "legacy",
       messages: [welcomeMessage],
     };
 
@@ -72,6 +75,14 @@ function Faq() {
           messages,
         };
       })
+    );
+  };
+
+  const handleSubjectChange = (conversationId, subject) => {
+    setConversations((current) =>
+      current.map((item) =>
+        item.id === conversationId ? { ...item, subject } : item
+      )
     );
   };
 
@@ -164,6 +175,7 @@ function Faq() {
         <AiChatPanel
           conversation={selectedConversation}
           onMessagesChange={handleMessagesChange}
+          onSubjectChange={handleSubjectChange}
         />
       </Box>
     </Box>
