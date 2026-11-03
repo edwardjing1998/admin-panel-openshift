@@ -64,8 +64,7 @@ export default function MathsSection() {
   const [search, setSearch] = useState("");
   const current = GRADE_QUESTIONS[grade][questionIndex];
   const attempts = useMemo(() => saved.filter(x => x.grade === grade), [saved, grade]);
-  const correctCount = attempts.filter(x => x.correct).length;
-  const accuracy = attempts.length ? Math.round(correctCount / attempts.length * 100) : 0;
+  const accuracy = attempts.length ? Math.round(attempts.filter(x => x.correct).length / attempts.length * 100) : 0;
   const resources = CARD_DATA(grade);
   const filtered = resources.filter(x => (tab === "overview" || x.type === tab) && `${x.title} ${x.desc}`.toLowerCase().includes(search.toLowerCase()));
   useEffect(() => { setQuestionIndex(0); setAnswer(""); setHint(false); setFeedback(null); setSelectedRecord(null); setDetail(null); }, [grade]);
@@ -94,7 +93,6 @@ export default function MathsSection() {
       <div className="maths-hero-visual" aria-hidden="true"><span className="maths-orbit one">✦</span><span className="maths-orbit two">÷</span><span className="maths-equation">4 × 3 <b>= 12</b></span><div className="maths-blocks"><span>● ● ●</span><span>● ● ●</span><span>● ● ●</span><span>● ● ●</span></div><span className="maths-orbit three">✧</span></div>
     </section>
     <section className="maths-grade-panel" aria-label="Choose maths grade"><div><strong>Choose your grade</strong><p>Content and practice change with your grade.</p></div><div className="maths-grade-options">{GRADES.map(g => <button className={grade === g ? "active" : ""} key={g} onClick={() => setGrade(g)} aria-pressed={grade === g}>Grade {g}</button>)}</div></section>
-    <div className="maths-metrics"><div><span>Current grade</span><strong>Grade {grade}</strong><small>{SUBJECTS[grade][0]}</small></div><div><span>Questions attempted</span><strong>{attempts.length}</strong><small>Saved on this device</small></div><div><span>Answer accuracy</span><strong>{attempts.length ? `${accuracy}%` : "—"}</strong><small>Based on saved attempts</small></div><div><span>Learning journey</span><strong>{correctCount} <small>correct</small></strong><small>Keep building your skills</small></div></div>
     <nav className="maths-tabs" aria-label="Maths sections">{TABS.map(([id, icon, label]) => <button key={id} className={tab === id ? "active" : ""} aria-current={tab === id ? "page" : undefined} onClick={() => moveTo(id)}><span aria-hidden="true">{icon}</span> {label}</button>)}</nav>
     {(tab === "overview" || tab === "textbooks" || tab === "videos" || tab === "exercises") && <>
       <div className="maths-section-title"><div><span className="maths-eyebrow">GRADE {grade} LIBRARY</span><h2>{tab === "overview" ? "Explore your learning library" : tab === "textbooks" ? "Textbooks & workbooks" : tab === "videos" ? "Video lessons" : "Interactive exercises"}</h2><p>{tab === "overview" ? "Everything you need, organized by learning format." : `Browse available ${tab} for Grade ${grade}.`}</p></div><label className="maths-search"><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search learning resources" aria-label="Search maths resources" /></label></div>
