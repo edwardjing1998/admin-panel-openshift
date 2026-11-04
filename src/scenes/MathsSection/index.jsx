@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import "./MathsSection.css";
 
 const GRADES = [1, 2, 3, 4, 5, 6];
@@ -7,7 +8,7 @@ const TABS = [
   ["textbooks", "▤", "Textbooks"],
   ["videos", "▷", "Videos"],
   ["exercises", "✎", "Exercises"],
-  ["mywork", "▧", "My Work"],
+  ["mywork", "▧", "Saved Exercises"],
   ["progress", "◷", "Progress"],
 ];
 const SUBJECTS = {
@@ -52,8 +53,11 @@ function ResourceCard({ item, onOpen }) {
 }
 
 export default function MathsSection() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab = TABS.some(([id]) => id === requestedTab) ? requestedTab : "overview";
   const [grade, setGrade] = useState(3);
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(initialTab);
   const [saved, setSaved] = useState(readSaved);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -69,7 +73,20 @@ export default function MathsSection() {
   const filtered = resources.filter(x => (tab === "overview" || x.type === tab) && `${x.title} ${x.desc}`.toLowerCase().includes(search.toLowerCase()));
   useEffect(() => { setQuestionIndex(0); setAnswer(""); setHint(false); setFeedback(null); setSelectedRecord(null); setDetail(null); }, [grade]);
   useEffect(() => { try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch (_) {} }, [saved]);
-  const moveTo = next => { setTab(next); setDetail(null); setFeedback(null); };
+  useEffect(() => {
+    const requested = searchParams.get("tab");
+    if (TABS.some(([id]) => id === requested)) {
+      setTab(requested);
+    } else if (!requested) {
+      setTab("overview");
+    }
+  }, [searchParams]);
+  const moveTo = next => {
+    setTab(next);
+    setDetail(null);
+    setFeedback(null);
+    setSearchParams(next === "overview" ? {} : { tab: next });
+  };
   const openCard = item => {
     if (item.id === `exercise-${grade}`) { setTab("practice"); setFeedback(null); setHint(false); setAnswer(""); }
     else setDetail(item);
@@ -80,13 +97,13 @@ export default function MathsSection() {
     const ok = Number(answer) === current.a;
     const record = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, grade, question: current.q, expected: current.a, answer: answer.trim(), correct: ok, usedHint: hint, createdAt: new Date().toISOString() };
     setSaved(prev => [...prev, record].slice(-100));
-    setFeedback({ ok, message: ok ? "Great work! Your answer has been saved in My Work on this browser." : `Not quite. ${current.h} Your attempt has been saved.` });
+    setFeedback({ ok, message: ok ? "Great work! Your answer has been saved in Saved Exercises on this browser." : `Not quite. ${current.h} Your attempt has been saved.` });
   };
   const nextQuestion = () => { setQuestionIndex(i => (i + 1) % GRADE_QUESTIONS[grade].length); setAnswer(""); setFeedback(null); setHint(false); };
   return <div className="maths-section">
     <header className="maths-heading">
       <div><span className="maths-eyebrow">STUDENT LEARNING SPACE / MATHEMATICS</span><h1>Maths Section <span aria-hidden="true">✦</span></h1><p>One place for learning, practicing, saving work and growing your maths confidence.</p></div>
-      <div className="maths-heading-right"><span className="maths-preview-pill">● Portal preview</span><button className="maths-outline-btn" onClick={() => moveTo("mywork")}>▧ My saved work</button></div>
+      <div className="maths-heading-right"><span className="maths-preview-pill">● Portal preview</span><button className="maths-outline-btn" onClick={() => moveTo("mywork")}>▧ Saved Exercises</button></div>
     </header>
     <section className="maths-hero">
       <div className="maths-hero-copy"><span className="maths-hero-label">YOUR LEARNING JOURNEY</span><h2>Big ideas start with <em>small discoveries.</em></h2><p>Explore textbooks, watch lessons, solve challenges, and keep a record of what you've learned.</p><button className="maths-primary-btn" onClick={() => moveTo("practice")}>Start practising <span>→</span></button></div>
@@ -101,7 +118,7 @@ export default function MathsSection() {
       {tab === "overview" && <section className="maths-next"><div><span className="maths-eyebrow">TOPICS TO EXPLORE</span><h3>What will you learn in Grade {grade}?</h3><p>Select an exercise to put these ideas into practice.</p></div><div className="maths-topic-pills">{SUBJECTS[grade].map((topic, idx) => <button key={topic} onClick={() => moveTo("exercises")}><span>0{idx + 1}</span>{topic} ↗</button>)}</div></section>}
     </>}
     {tab === "practice" && <section className="maths-practice"><div className="maths-practice-head"><div><span className="maths-eyebrow">GRADE {grade} / INTERACTIVE EXERCISE</span><h2>Quick Maths Challenge</h2><p>Question {questionIndex + 1} of {GRADE_QUESTIONS[grade].length} · Each submission is saved locally.</p></div><button className="maths-outline-btn" onClick={() => moveTo("exercises")}>← Back to exercises</button></div><div className="maths-practice-body"><div className="maths-question"><span>SOLVE THE PROBLEM</span><strong>{current.q} = ?</strong><div className="maths-visual-dots" aria-hidden="true">✦ &nbsp; ✧ &nbsp; ✦</div></div><form className="maths-answer-form" onSubmit={submit}><label htmlFor="maths-answer">Your answer</label><input id="maths-answer" type="number" step="any" value={answer} onChange={event => { setAnswer(event.target.value); setFeedback(null); }} placeholder="Type your answer" /><div className="maths-actions"><button type="submit" className="maths-primary-btn">Check & save</button><button type="button" className="maths-outline-btn" onClick={() => setHint(true)}>💡 Show hint</button></div>{hint && <p className="maths-hint">{current.h}</p>}{feedback && <p role="status" className={`maths-feedback ${feedback.ok ? "success" : "try"}`}>{feedback.message}</p>}{feedback && <button type="button" className="maths-next-question" onClick={nextQuestion}>Next question →</button>}</form></div></section>}
-    {tab === "mywork" && <section className="maths-work"><div className="maths-section-title"><div><span className="maths-eyebrow">YOUR PERSONAL PRACTICE</span><h2>Saved exercises</h2><p>Review answers, hints and a simple replay storyboard.</p></div><button className="maths-outline-btn" onClick={() => moveTo("practice")}>+ New exercise</button></div>{attempts.length ? <div className="maths-work-list">{[...attempts].reverse().map(record => <button key={record.id} className={`maths-work-item ${selectedRecord?.id === record.id ? "selected" : ""}`} onClick={() => setSelectedRecord(record)}><span className="maths-work-icon">{record.correct ? "✓" : "↻"}</span><span><strong>{record.question} = {record.answer}</strong><small>{new Date(record.createdAt).toLocaleString()} · {record.correct ? "Correct" : "Try again"}{record.usedHint ? " · Used hint" : ""}</small></span><span aria-hidden="true">View replay →</span></button>)}</div> : <div className="maths-empty-card"><span>📝</span><h3>Your maths portfolio starts here</h3><p>Complete a Quick Maths Challenge to save your first exercise.</p><button className="maths-primary-btn" onClick={() => moveTo("practice")}>Try an exercise →</button></div>}{selectedRecord && <div className="maths-replay"><h3>Exercise replay storyboard</h3><p>Based on saved exercise data—not a recorded video.</p><div className="maths-replay-steps"><div><b>1</b><strong>Question</strong><span>{selectedRecord.question}</span></div><div><b>2</b><strong>Student answer</strong><span>{selectedRecord.answer}{selectedRecord.usedHint ? " · Hint used" : ""}</span></div><div><b>3</b><strong>Result</strong><span>{selectedRecord.correct ? "Correct" : `The expected answer was ${selectedRecord.expected}`}</span></div></div><div className="maths-replay-note">🎬 Personalized MP4 creation requires connecting your existing Education video-generation service.</div></div>}</section>}
+    {tab === "mywork" && <section className="maths-work"><div className="maths-section-title"><div><span className="maths-eyebrow">YOUR PERSONAL PRACTICE</span><h2>Saved exercises</h2><p>Review answers, hints and a simple replay storyboard.</p></div><button className="maths-outline-btn" onClick={() => moveTo("practice")}>+ New exercise</button></div>{attempts.length ? <div className="maths-work-list">{[...attempts].reverse().map(record => <button key={record.id} className={`maths-work-item ${selectedRecord?.id === record.id ? "selected" : ""}`} onClick={() => setSelectedRecord(record)}><span className="maths-work-icon">{record.correct ? "✓" : "↻"}</span><span><strong>{record.question} = {record.answer}</strong><small>{new Date(record.createdAt).toLocaleString()} · {record.correct ? "Correct" : "Try again"}{record.usedHint ? " · Used hint" : ""}</small></span><span aria-hidden="true">View replay →</span></button>)}</div> : <div className="maths-empty-card"><span>📝</span><h3>Your saved exercises start here</h3><p>Complete a Quick Maths Challenge to save your first exercise.</p><button className="maths-primary-btn" onClick={() => moveTo("practice")}>Try an exercise →</button></div>}{selectedRecord && <div className="maths-replay"><h3>Exercise replay storyboard</h3><p>Based on saved exercise data—not a recorded video.</p><div className="maths-replay-steps"><div><b>1</b><strong>Question</strong><span>{selectedRecord.question}</span></div><div><b>2</b><strong>Student answer</strong><span>{selectedRecord.answer}{selectedRecord.usedHint ? " · Hint used" : ""}</span></div><div><b>3</b><strong>Result</strong><span>{selectedRecord.correct ? "Correct" : `The expected answer was ${selectedRecord.expected}`}</span></div></div><div className="maths-replay-note">🎬 Personalized MP4 creation requires connecting your existing Education video-generation service.</div></div>}</section>}
     {tab === "progress" && <section className="maths-progress"><div className="maths-section-title"><div><span className="maths-eyebrow">YOUR LEARNING INSIGHTS</span><h2>Grade {grade} progress</h2><p>Based only on the Quick Maths Challenge attempts saved in this browser.</p></div></div><div className="maths-progress-grid"><article><h3>Accuracy</h3><div className="maths-progress-track"><div style={{ width: `${accuracy}%` }} /></div><strong>{attempts.length ? `${accuracy}%` : "No attempts yet"}</strong></article><article><h3>Learning topics</h3>{SUBJECTS[grade].map((topic,i) => <p key={topic}><span className="maths-topic-number">0{i+1}</span> {topic}</p>)}</article></div><p className="maths-note">This is a local prototype. Teacher reports, mastery assessment, cross-device student accounts and adaptive recommendations need backend integration.</p></section>}
     {detail && <div className="maths-modal-backdrop" onClick={() => setDetail(null)}><section className="maths-modal" role="dialog" aria-modal="true" aria-label={detail.title} onClick={event => event.stopPropagation()}><button className="maths-modal-close" aria-label="Close" onClick={() => setDetail(null)}>✕</button><div className={`maths-resource-art ${detail.tint}`}><span>{detail.icon}</span><small>{detail.tag}</small></div><h2>{detail.title}</h2><p>{detail.desc}</p><div className="maths-modal-notice"><strong>Integration planned</strong><p>This is a grade-based catalog placeholder. Connect your published textbook, lesson, or video endpoints before enabling student access.</p></div><button className="maths-outline-btn" onClick={() => setDetail(null)}>Close</button></section></div>}
     <footer className="maths-disclaimer">Prototype · Grade catalog items are examples, not published resources · Practice attempts are stored on this browser only (not linked to a student account) · Do not use shared devices for private student work. <button onClick={() => { if(window.confirm("Clear all locally saved Maths Section demo attempts on this browser?")){setSaved([]);setSelectedRecord(null);} }}>Clear local demo data</button></footer>
