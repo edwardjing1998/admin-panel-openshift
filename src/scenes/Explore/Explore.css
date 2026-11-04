@@ -1,0 +1,22 @@
+.explore-courses-page { padding: 20px; width: 100%; max-width: 1450px; margin: 0 auto; }
+.explore-courses-hero { display: flex; align-items: center; gap: 18px; padding: 26px; margin: 20px 0 24px; border-radius: 16px; background: rgba(70, 120, 195, .12); }
+.explore-courses-hero h2 { margin-bottom: 8px; }
+.explore-courses-filters { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
+.explore-courses-search { flex: 2 1 290px; }
+.explore-courses-filter { flex: 1 1 150px; min-width: 150px; }
+.explore-courses-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.explore-courses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; }
+.explore-course-card { display: flex; flex-direction: column; border-radius: 14px !important; }
+.explore-course-body { flex: 1; }
+.explore-course-icon { display: flex; align-items: center; justify-content: center; height: 62px; width: 62px; border-radius: 14px; background: rgba(80, 130, 200, .14); }
+.explore-course-icon-english { background: rgba(130, 100, 190, .14); }
+.explore-course-icon-physics { background: rgba(60, 150, 140, .14); }
+.explore-course-icon-chemistry { background: rgba(190, 110, 80, .14); }
+.explore-courses-empty { border: 1px dashed currentColor; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+@media (max-width: 650px) {
+  .explore-courses-page { padding: 12px; }
+  .explore-courses-hero { padding: 18px; align-items: flex-start; }
+  .explore-courses-filters { flex-direction: column; align-items: stretch; }
+  .explore-courses-filter, .explore-courses-search { flex: 1 1 auto; width: 100%; }
+  .explore-courses-heading { align-items: flex-start; }
+}

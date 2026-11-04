@@ -159,17 +159,13 @@ function Sidebar() {
                 Learning Hub
               </Typography>
               <Item title="Learning Home" to="/" icon={<HomeOutlinedIcon />} selected={selected} />
+              <Item title="Explore Courses" to="/explore" icon={<MapOutlinedIcon />} selected={selected} />
               <Item title="Learning Calendar" to="/calendar" icon={<CalendarTodayOutlinedIcon />} selected={selected} />
 
               <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
                 Courses
               </Typography>
               <Item title="Mathematics" to="/maths" icon={<CalculateOutlinedIcon />} selected={selected} />
-
-              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
-                Explore
-              </Typography>
-              <Item title="Explore Mathematics" to="/maths?tab=overview" icon={<MapOutlinedIcon />} selected={selected} />
 
               <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
                 Learning Support

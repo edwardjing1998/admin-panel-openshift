@@ -14,6 +14,7 @@ import Line from "./scenes/Line";
 import Pie from "./scenes/Pie";
 import Faq from "./scenes/Faq";
 import MathsSection from "./scenes/MathsSection";
+import Explore from "./scenes/Explore";
 import Geography from "./scenes/Geography";
 import Calendar from "./scenes/Calendar";
 function App() {
@@ -35,6 +36,7 @@ function App() {
               <Route path="/faq" element={<Faq />} />
               <Route path="/learning-assistant" element={<Faq />} />
               <Route path="/maths" element={<MathsSection />} />
+              <Route path="/explore" element={<Explore />} />
               <Route path="/ai-learning-game" element={<MathsSection />} />
               <Route path="/bar" element={<Bar />} />
               <Route path="/form" element={<Form />} />

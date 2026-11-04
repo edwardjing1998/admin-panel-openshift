@@ -1,0 +1,48 @@
+// Phase 1: local course discovery configuration. Replace with an authenticated
+// course catalog API when course management and enrollment are implemented.
+export const COURSE_CATALOG = [
+  {
+    id: "mathematics",
+    name: "Mathematics",
+    icon: "math",
+    description: "Explore numbers, multiplication, geometry, measurement and problem solving.",
+    grades: [1, 2, 3, 4, 5, 6],
+    topics: ["Multiplication", "Division", "Geometry", "Fractions", "Measurement"],
+    status: "available",
+    route: "/maths",
+    preview: "Interactive exercises, lesson previews and saved practice are available in the Mathematics course.",
+  },
+  {
+    id: "english",
+    name: "English",
+    icon: "english",
+    description: "Explore reading comprehension, vocabulary, grammar and creative writing.",
+    grades: [1, 2, 3, 4, 5, 6],
+    topics: ["Reading", "Vocabulary", "Grammar", "Writing"],
+    status: "planned",
+    route: null,
+    preview: "An English course workspace will appear when its curriculum and content are published.",
+  },
+  {
+    id: "physics",
+    name: "Physics",
+    icon: "physics",
+    description: "Discover motion, forces, energy and experiments.",
+    grades: [6, 7, 8, 9, 10, 11, 12],
+    topics: ["Motion", "Forces", "Energy", "Experiments"],
+    status: "planned",
+    route: null,
+    preview: "Physics lessons and activities will be available when this course is launched.",
+  },
+  {
+    id: "chemistry",
+    name: "Chemistry",
+    icon: "chemistry",
+    description: "Learn about matter, elements, materials and chemical reactions.",
+    grades: [6, 7, 8, 9, 10, 11, 12],
+    topics: ["Matter", "Elements", "Materials", "Reactions"],
+    status: "planned",
+    route: null,
+    preview: "Chemistry lessons and activities will be available when this course is launched.",
+  },
+];
