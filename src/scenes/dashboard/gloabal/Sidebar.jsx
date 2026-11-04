@@ -172,11 +172,6 @@ function Sidebar() {
               <Item title="Saved Exercises" to="/maths?tab=mywork" icon={<ReceiptOutlinedIcon />} selected={selected} />
 
               <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
-                Progress
-              </Typography>
-              <Item title="Maths Progress" to="/maths?tab=progress" icon={<BarChartOutlinedIcon />} selected={selected} />
-
-              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
                 Explore
               </Typography>
               <Item title="Explore Mathematics" to="/maths?tab=overview" icon={<MapOutlinedIcon />} selected={selected} />
