@@ -1,282 +1,229 @@
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Box, Button, Chip, Typography, useTheme } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
+import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import HistoryEduOutlinedIcon from "@mui/icons-material/HistoryEduOutlined";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import OndemandVideoOutlinedIcon from "@mui/icons-material/OndemandVideoOutlined";
+import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
+import TranslateOutlinedIcon from "@mui/icons-material/TranslateOutlined";
 import Header from "../../components/Header";
-import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
-import ProgressCircle from "../../components/ProgressCircle";
-import StatBox from "../../components/StatBox";
-import { mockTransactions } from "../../data/mockData";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import EmailIcon from "@mui/icons-material/Email";
-import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import TrafficIcon from "@mui/icons-material/Traffic";
-import LineChart from "../../components/LineChart";
-import GeographyChart from "../../components/GeographyChart";
-import BarChart from "../../components/BarChart";
-import { tokens } from "../../theme";
-function Dashboard() {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+import "./LearningPortal.css";
+
+// This key is defined by the existing MathsSection page. Do not change it
+// without migrating saved demo attempts from that page as well.
+const MATHS_ATTEMPTS_STORAGE_KEY = "maths-section-demo-v1";
+const GRADE = 3;
+
+const QUICK_LINKS = [
+  { label: "Textbooks", detail: "Browse Grade 3 learning materials", icon: MenuBookOutlinedIcon, to: "/maths?tab=textbooks" },
+  { label: "Training videos", detail: "Find guided lesson videos", icon: OndemandVideoOutlinedIcon, to: "/maths?tab=videos" },
+  { label: "Exercises", detail: "Practice multiplication and more", icon: HistoryEduOutlinedIcon, to: "/maths?tab=exercises" },
+  { label: "Saved work", detail: "Review your practice attempts", icon: AutoStoriesOutlinedIcon, to: "/maths?tab=mywork" },
+];
+
+const UPCOMING_COURSES = [
+  { name: "English", icon: TranslateOutlinedIcon },
+  { name: "Physics", icon: SchoolOutlinedIcon },
+  { name: "Chemistry", icon: ScienceOutlinedIcon },
+];
+
+function readGradeThreeAttempts() {
+  try {
+    const raw = window.localStorage.getItem(MATHS_ATTEMPTS_STORAGE_KEY);
+    const parsed = JSON.parse(raw || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item) =>
+      item && item.grade === GRADE && typeof item.answer === "string" &&
+      typeof item.question === "string" && typeof item.createdAt === "string"
+    );
+  } catch (_error) {
+    return [];
+  }
+}
+
+function PortalLink({ item }) {
+  const Icon = item.icon;
   return (
-    <Box margin="0.5rem 1rem">
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
-        <Box>
-          <Button
-            sx={{
-              backgroundColor: colors.blueAccent[700],
-              color: colors.grey[100],
-              fontSize: "1rem",
-              fontWeight: "bold",
-              padding: "0.1remem 0.2rem",
-            }}
-          >
-            <DownloadOutlinedIcon sx={{ mr: "0.2rem" }} />
-            Download Reports
-          </Button>
-        </Box>
+    <Button
+      component={RouterLink}
+      to={item.to}
+      className="portal-quick-card"
+      variant="outlined"
+      sx={{ justifyContent: "flex-start", alignItems: "flex-start", textTransform: "none", textAlign: "left" }}
+    >
+      <Box className="portal-quick-icon"><Icon fontSize="medium" /></Box>
+      <Box>
+        <Typography className="portal-card-title" fontWeight={700}>{item.label}</Typography>
+        <Typography variant="body2" color="text.secondary">{item.detail}</Typography>
       </Box>
-      {/* Progress bars */}
-      <Box
-        display="grid"
-        gridTemplateColumns="repeat(12, 1fr)"
-        gap="1rem !important"
-        gridAutoRows="minmax(100px, auto)"
-      >
-        {/* first Row */}
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="12,361"
-            subtitle="Emails Sent"
-            progress="0.75"
-            increase="+14%"
-            icon={
-              <EmailIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="431,225"
-            subtitle="Sales Obtained"
-            progress="0.50"
-            increase="+21%"
-            icon={
-              <PointOfSaleIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="32,441"
-            subtitle="New Clients"
-            progress="0.30"
-            increase="+5%"
-            icon={
-              <PersonAddIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
-            progress="0.80"
-            increase="+43%"
-            icon={
-              <TrafficIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        {/* second row */}
-        <Box
-          gridColumn="span 8"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          height="50vh !important"
-        >
-          <Box
-            mt="25px"
-            p="0 30px"
-            display="flex "
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Box>
-              <Typography
-                variant="h5"
-                fontWeight="600"
-                color={colors.grey[100]}
-              >
-                Revenue Generated
-              </Typography>
-              <Typography
-                variant="h3"
-                fontWeight="bold"
-                color={colors.greenAccent[500]}
-              >
-                $59,342.32
-              </Typography>
-            </Box>
-            <Box>
-              <IconButton>
-                <DownloadOutlinedIcon
-                  sx={{ fontSize: "26px", color: colors.greenAccent[500] }}
-                />
-              </IconButton>
-            </Box>
-          </Box>
-          <Box height="250px !important" m="-20px 0 0 0">
-            <LineChart isDashboard={true} />
-          </Box>
-        </Box>
-        {/* transactions */}
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          height="50vh !important"
-          overflow="auto !important"
-          className="transaction-container"
-        >
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            borderBottom={`4px solid ${colors.primary[500]}`}
-            colors={colors.grey[100]}
-            p="15px"
-          >
-            <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
-              Recent Transactions
-            </Typography>
-          </Box>
-          {mockTransactions.map((transaction, i) => (
-            <Box
-              key={`${transaction.txId}-${i}`}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              borderBottom={`4px solid ${colors.primary[500]}`}
-              p="15px"
-            >
-              <Box>
-                <Typography
-                  color={colors.greenAccent[500]}
-                  variant="h5"
-                  fontWeight="600"
-                >
-                  {transaction.txId}
-                </Typography>
-                <Typography color={colors.grey[100]}>
-                  {transaction.user}
-                </Typography>
-              </Box>
-              <Box color={colors.grey[100]}>{transaction.date}</Box>
-              <Box
-                backgroundColor={colors.greenAccent[500]}
-                p="5px 10px"
-                borderRadius="4px"
-              >
-                ${transaction.cost}
-              </Box>
-            </Box>
-          ))}
-        </Box>
-        {/* third row */}
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          p="30px"
-        >
-          <Typography variant="h5" fontWeight="600">
-            Campaign
-          </Typography>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            mt="25px"
-          >
-            <ProgressCircle size="125" />
-            <Typography
-              variant="h5"
-              color={colors.greenAccent[500]}
-              sx={{ mt: "15px" }}
-            >
-              $48,352 revenue generated
-            </Typography>
-            <Typography>Includes extra misc expenditures and costs</Typography>
-          </Box>
-        </Box>
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-        >
-          <Typography
-            variant="h5"
-            fontWeight="600"
-            sx={{ padding: "30px 30px 0 30px" }}
-          >
-            Sales Quantity
-          </Typography>
-          <Box height="250px" mt="-20px">
-            <BarChart isDashboard={true} />
-          </Box>
-        </Box>
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          padding="30px"
-        >
-          <Typography
-            variant="h5"
-            fontWeight="600"
-            sx={{ marginBottom: "15px" }}
-          >
-            Geography Based Traffic
-          </Typography>
-          <Box height="200px">
-            <GeographyChart isDashboard={true} />
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+      <ArrowForwardRoundedIcon className="portal-quick-arrow" fontSize="small" />
+    </Button>
   );
 }
 
-export default Dashboard;
+export default function Dashboard() {
+  const theme = useTheme();
+  const [attempts, setAttempts] = useState(readGradeThreeAttempts);
+
+  // Reload on focus/visibility so attempts added on the Maths page appear
+  // when a student comes back to the homepage. No student API is assumed.
+  const refreshAttempts = useCallback(() => setAttempts(readGradeThreeAttempts()), []);
+  useEffect(() => {
+    window.addEventListener("focus", refreshAttempts);
+    window.addEventListener("storage", refreshAttempts);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refreshAttempts();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", refreshAttempts);
+      window.removeEventListener("storage", refreshAttempts);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refreshAttempts]);
+
+  const latest = useMemo(() => [...attempts]
+    .filter((item) => !Number.isNaN(Date.parse(item.createdAt)))
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    .slice(0, 3), [attempts]);
+
+  return (
+    <Box className="learning-portal" sx={{ color: theme.palette.text.primary }}>
+      <Header title="AI Learning Portal" subtitle="Welcome to your AI Learning Portal" />
+
+      <section className="portal-welcome" aria-labelledby="portal-welcome-title">
+        <Box className="portal-welcome-copy">
+          <Typography className="portal-eyebrow">YOUR LEARNING HOME</Typography>
+          <Typography id="portal-welcome-title" component="h2" variant="h3" fontWeight={800}>
+            Ready for your next discovery?
+          </Typography>
+          <Typography className="portal-welcome-description">
+            Continue a maths lesson, try interactive exercises, or explore your saved work—all in one place.
+          </Typography>
+          <Box className="portal-button-row">
+            <Button component={RouterLink} to="/maths?tab=exercises" variant="contained" endIcon={<ArrowForwardRoundedIcon />}>
+              Continue Learning
+            </Button>
+            <Button component={RouterLink} to="/maths" variant="outlined" color="inherit">
+              Explore Mathematics
+            </Button>
+          </Box>
+        </Box>
+        <Box className="portal-welcome-illustration" aria-hidden="true">
+          <div className="portal-math-icon">✦</div>
+          <div className="portal-equation">4 × 3 = 12</div>
+          <div className="portal-dots"><span>● ● ●</span><span>● ● ●</span><span>● ● ●</span><span>● ● ●</span></div>
+        </Box>
+      </section>
+
+      <section className="portal-section" aria-labelledby="portal-resume-heading">
+        <Box className="portal-section-heading">
+          <Box>
+            <Typography id="portal-resume-heading" component="h2" variant="h4" fontWeight={700}>Continue Learning</Typography>
+            <Typography variant="body2" color="text.secondary">Pick up with Grade 3 Mathematics.</Typography>
+          </Box>
+          <Chip label="Grade 3" variant="outlined" size="small" />
+        </Box>
+        <Box className="portal-feature-card">
+          <Box className="portal-feature-mark"><CalculateOutlinedIcon sx={{ fontSize: 34 }} /></Box>
+          <Box className="portal-feature-copy">
+            <Typography className="portal-eyebrow">MATHEMATICS · GRADE 3</Typography>
+            <Typography component="h3" variant="h5" fontWeight={700}>Multiplication Strategies</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Explore equal groups, arrays, skip counting, and repeated addition.
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {attempts.length > 0
+                ? `${attempts.length} practice attempt${attempts.length === 1 ? "" : "s"} saved in this browser.`
+                : "Start a Quick Maths Challenge to record your first practice attempt."}
+            </Typography>
+          </Box>
+          <Button component={RouterLink} to="/maths?tab=exercises" variant="contained" endIcon={<PlayCircleOutlineRoundedIcon />}>
+            {attempts.length ? "Keep Practising" : "Start Practising"}
+          </Button>
+        </Box>
+      </section>
+
+      <section className="portal-section" aria-labelledby="portal-courses-heading">
+        <Box className="portal-section-heading">
+          <Box>
+            <Typography id="portal-courses-heading" component="h2" variant="h4" fontWeight={700}>Courses</Typography>
+            <Typography variant="body2" color="text.secondary">Explore available subjects.</Typography>
+          </Box>
+        </Box>
+        <Box className="portal-course-grid">
+          <Box component={RouterLink} to="/maths" className="portal-course-card portal-course-active">
+            <CalculateOutlinedIcon sx={{ fontSize: 30 }} />
+            <Typography component="h3" fontWeight={700}>Mathematics</Typography>
+            <Typography variant="body2">Grades 1–6 · Interactive practice</Typography>
+            <span className="portal-course-foot">Open course <ArrowForwardRoundedIcon fontSize="small" /></span>
+          </Box>
+          {UPCOMING_COURSES.map((course) => {
+            const Icon = course.icon;
+            return (
+              <Box className="portal-course-card portal-course-soon" key={course.name}>
+                <Icon sx={{ fontSize: 30 }} />
+                <Typography component="h3" fontWeight={700}>{course.name}</Typography>
+                <Typography variant="body2">Course configuration planned</Typography>
+                <span className="portal-course-foot">Coming soon</span>
+              </Box>
+            );
+          })}
+        </Box>
+      </section>
+
+      <section className="portal-section" aria-labelledby="portal-access-heading">
+        <Box className="portal-section-heading">
+          <Box>
+            <Typography id="portal-access-heading" component="h2" variant="h4" fontWeight={700}>Quick Access</Typography>
+            <Typography variant="body2" color="text.secondary">Choose how you want to learn.</Typography>
+          </Box>
+        </Box>
+        <Box className="portal-quick-grid">
+          {QUICK_LINKS.map((item) => <PortalLink item={item} key={item.label} />)}
+        </Box>
+      </section>
+
+      <section className="portal-section portal-last-section" aria-labelledby="portal-work-heading">
+        <Box className="portal-section-heading">
+          <Box>
+            <Typography id="portal-work-heading" component="h2" variant="h4" fontWeight={700}>Recent Practice</Typography>
+            <Typography variant="body2" color="text.secondary">Grade 3 attempts saved by the Maths Section on this browser.</Typography>
+          </Box>
+          <Button component={RouterLink} to="/maths?tab=mywork" endIcon={<ArrowForwardRoundedIcon />}>View Saved Work</Button>
+        </Box>
+        {latest.length ? (
+          <Box className="portal-attempt-list">
+            {latest.map((item, i) => (
+              <Box className="portal-attempt" key={item.id || `${item.createdAt}-${i}`}>
+                <CheckCircleOutlineRoundedIcon color={item.correct ? "success" : "disabled"} />
+                <Box flex={1}>
+                  <Typography fontWeight={700}>{item.question} = {item.answer}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(item.createdAt).toLocaleString()} · {item.correct ? "Correct" : "Try again"}{item.usedHint ? " · Hint used" : ""}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          <Box className="portal-empty-state">
+            <AutoStoriesOutlinedIcon fontSize="large" color="action" />
+            <Typography fontWeight={700}>Your learning journey starts here.</Typography>
+            <Typography variant="body2" color="text.secondary">Solve a Quick Maths Challenge to see your saved work.</Typography>
+            <Button component={RouterLink} to="/maths?tab=exercises" size="small">Open Exercises <ArrowForwardRoundedIcon fontSize="small" /></Button>
+          </Box>
+        )}
+        <Typography className="portal-local-note" variant="caption" color="text.secondary">
+          This homepage uses the existing Maths Section prototype. Saved attempts stay in this browser; student accounts, published course resources, video playback and AI recommendations require backend integration. Avoid saving private student information on shared devices.
+        </Typography>
+      </section>
+    </Box>
+  );
+}

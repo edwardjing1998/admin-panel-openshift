@@ -1,0 +1,37 @@
+.learning-portal { padding: 8px 22px 36px; max-width: 1500px; margin: 0 auto; }
+.learning-portal .portal-welcome { display: flex; gap: 24px; align-items: stretch; justify-content: space-between; background: linear-gradient(110deg, #182d59, #274f88); color: #fff; border-radius: 18px; padding: 30px 34px; margin: 8px 0 30px; overflow: hidden; }
+.learning-portal .portal-welcome-copy { max-width: 680px; display: flex; flex-direction: column; gap: 15px; justify-content: center; }
+.learning-portal .portal-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; opacity: .86; }
+.learning-portal .portal-welcome-description { font-size: 15px; line-height: 1.65; color: #e7edf9; }
+.learning-portal .portal-button-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.learning-portal .portal-button-row .MuiButton-outlined { color: #fff; border-color: rgba(255,255,255,.65); }
+.learning-portal .portal-button-row .MuiButton-contained { background: #fff; color: #1c3966; }
+.learning-portal .portal-welcome-illustration { flex: 0 0 250px; min-height: 190px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.09); border-radius: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 13px; }
+.learning-portal .portal-math-icon { font-size: 26px; color: #ffda8d; }
+.learning-portal .portal-equation { font-size: 27px; font-weight: 800; }
+.learning-portal .portal-dots { display: grid; gap: 3px; font-size: 14px; letter-spacing: 12px; color: #bce7ff; }
+.learning-portal .portal-dots span { display: block; }
+.learning-portal .portal-section { margin-top: 29px; }
+.learning-portal .portal-section-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.learning-portal .portal-feature-card { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; border: 1px solid; border-color: rgba(120,140,165,.23); border-radius: 16px; padding: 22px; background: rgba(125,145,175,.07); }
+.learning-portal .portal-feature-mark { width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; background: rgba(72,136,218,.13); border-radius: 16px; color: #6199e7; }
+.learning-portal .portal-feature-copy { flex: 1 1 260px; display: flex; flex-direction: column; gap: 5px; }
+.learning-portal .portal-course-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.learning-portal .portal-course-card { display: flex; flex-direction: column; gap: 10px; min-height: 175px; border: 1px solid rgba(120,140,165,.24); border-radius: 15px; padding: 20px; color: inherit; text-decoration: none; }
+.learning-portal .portal-course-active { background: rgba(72,136,218,.12); }
+.learning-portal .portal-course-active:hover { outline: 2px solid rgba(72,136,218,.5); }
+.learning-portal .portal-course-soon { opacity: .68; }
+.learning-portal .portal-course-foot { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; margin-top: auto; }
+.learning-portal .portal-quick-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.learning-portal .portal-quick-card { min-height: 145px; padding: 17px !important; display: flex; flex-direction: column; gap: 8px; border-color: rgba(120,140,165,.3) !important; position: relative; color: inherit !important; }
+.learning-portal .portal-quick-icon { color: #6199e7; }
+.learning-portal .portal-quick-arrow { position: absolute; right: 15px; top: 18px; opacity: .6; }
+.learning-portal .portal-card-title { padding-right: 16px; }
+.learning-portal .portal-attempt-list { border: 1px solid rgba(120,140,165,.25); border-radius: 14px; overflow: hidden; }
+.learning-portal .portal-attempt { display: flex; align-items: center; gap: 15px; padding: 16px 20px; }
+.learning-portal .portal-attempt + .portal-attempt { border-top: 1px solid rgba(120,140,165,.2); }
+.learning-portal .portal-empty-state { border: 1px dashed rgba(120,140,165,.42); border-radius: 15px; padding: 30px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+.learning-portal .portal-local-note { display: block; margin-top: 14px; line-height: 1.6; }
+.learning-portal .portal-last-section { padding-bottom: 10px; }
+@media (max-width: 1060px) { .learning-portal .portal-course-grid, .learning-portal .portal-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 690px) { .learning-portal { padding: 8px 12px 28px; } .learning-portal .portal-welcome { padding: 23px; } .learning-portal .portal-welcome-illustration { display: none; } .learning-portal .portal-course-grid, .learning-portal .portal-quick-grid { grid-template-columns: 1fr; } .learning-portal .portal-feature-mark { width: 55px; height: 55px; } .learning-portal .portal-feature-card > .MuiButton-root { width: 100%; } }
