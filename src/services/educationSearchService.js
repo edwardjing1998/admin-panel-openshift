@@ -31,12 +31,23 @@ export async function searchEducation({ message, subject, searchIntent = "auto",
       throw new Error(typeof detail === "string" ? detail : `Education search failed (HTTP ${response.status}).`);
     }
     const results = Array.isArray(data.results) ? data.results : [];
-    const count = results.length;
+    const relatedResults = Array.isArray(data.related_results) ? data.related_results : [];
+    const matchStatus = typeof data.match_status === "string" ? data.match_status : null;
+    const backendMessage = typeof data.message === "string" ? data.message.trim() : "";
+    let content;
+    if (results.length) {
+      content = `Found ${results.length} verified educational ${results.length === 1 ? "resource" : "resources"}.`;
+    } else if (relatedResults.length) {
+      content = backendMessage || `No verified matches found. Here ${relatedResults.length === 1 ? "is" : "are"} ${relatedResults.length} related ${relatedResults.length === 1 ? "resource" : "resources"} you can review.`;
+    } else {
+      content = backendMessage || "No educational resources matched this question. Try a more specific question.";
+    }
     return {
-      content: count
-        ? `Found ${count} relevant educational ${count === 1 ? "resource" : "resources"}.`
-        : "No verified educational resources matched this question. Try a more specific question or a different search intent.",
+      content,
       results,
+      relatedResults,
+      matchStatus,
+      normalizedQuery: typeof data.normalized_query === "string" ? data.normalized_query : null,
       candidateCount: Number(data.candidate_count) || 0,
       rejectedCount: Number(data.rejected_count) || 0,
       traceId: null,

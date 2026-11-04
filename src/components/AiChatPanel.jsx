@@ -157,6 +157,10 @@ function AiChatPanel({ conversation, onMessagesChange, onSubjectChange, onGradeC
         educationResults: Array.isArray(normalizedResult.results)
           ? normalizedResult.results
           : [],
+        educationRelatedResults: Array.isArray(normalizedResult.relatedResults)
+          ? normalizedResult.relatedResults
+          : [],
+        educationMatchStatus: normalizedResult.matchStatus || null,
         subject: selectedSubject,
         grade: isEducationCourse ? selectedGrade : null,
         learningMode: isEducationCourse ? learningMode : null,
@@ -337,9 +341,14 @@ function AiChatPanel({ conversation, onMessagesChange, onSubjectChange, onGradeC
                   {displayContent}
                 </Typography>
 
-                {!isUser && Array.isArray(message.educationResults) && (
-                  <EducationSearchResults results={message.educationResults} />
-                )}
+                {!isUser &&
+                  (Array.isArray(message.educationResults) ||
+                    Array.isArray(message.educationRelatedResults)) && (
+                    <EducationSearchResults
+                      results={message.educationResults}
+                      relatedResults={message.educationRelatedResults}
+                    />
+                  )}
 
                 {!isUser &&
                   typeof message.traceId === "string" &&
