@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Chip,
   Avatar,
   Box,
   CircularProgress,
@@ -23,6 +24,7 @@ import { tokens } from "../theme";
 import { sendAiMessage } from "../services/aiChatService";
 import { searchEducation } from "../services/educationSearchService";
 import EducationSearchResults from "./EducationSearchResults";
+import { learningCourses, learningModes, suggestedQuestions } from "../config/learningAssistant";
 
 export const welcomeMessage = {
   role: "assistant",
@@ -30,7 +32,7 @@ export const welcomeMessage = {
     "Hello! I can help answer questions about your investments. What would you like to know?",
 };
 
-function AiChatPanel({ conversation, onMessagesChange, onSubjectChange }) {
+function AiChatPanel({ conversation, onMessagesChange, onSubjectChange, onGradeChange, onLearningModeChange }) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -39,6 +41,11 @@ function AiChatPanel({ conversation, onMessagesChange, onSubjectChange }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const selectedSubject = conversation.subject || "legacy";
+  const selectedGrade = conversation.grade || 3;
+  const learningMode = conversation.learningMode || "resources";
+  const isEducationCourse = learningCourses.some((course) => course.id === selectedSubject);
+  const availableCourse = learningCourses.find((course) => course.id === selectedSubject);
+  const exampleQuestions = suggestedQuestions[selectedSubject] || [];
 
   const messagesEndRef = useRef(null);
 
@@ -151,6 +158,8 @@ function AiChatPanel({ conversation, onMessagesChange, onSubjectChange }) {
           ? normalizedResult.results
           : [],
         subject: selectedSubject,
+        grade: isEducationCourse ? selectedGrade : null,
+        learningMode: isEducationCourse ? learningMode : null,
       };
 
       updateMessages([
@@ -397,19 +406,81 @@ function AiChatPanel({ conversation, onMessagesChange, onSubjectChange }) {
           minWidth: 0,
         }}
       >
-        <FormControl fullWidth size="small" sx={{ mb: 1.5 }} disabled={isLoading}>
-          <InputLabel id="ai-service-label">AI service</InputLabel>
-          <Select
-            labelId="ai-service-label"
-            label="AI service"
-            value={selectedSubject}
-            onChange={(event) => onSubjectChange(conversation.id, event.target.value)}
-          >
-            <MenuItem value="legacy">AT&amp;T Billing / Policy</MenuItem>
-            <MenuItem value="bible">Bible</MenuItem>
-            <MenuItem value="mathematics">Mathematics</MenuItem>
-          </Select>
-        </FormControl>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 130px" }, gap: 1.5, mb: 1.5 }}>
+          <FormControl fullWidth size="small" disabled={isLoading}>
+            <InputLabel id="ai-course-label">Course / service</InputLabel>
+            <Select
+              labelId="ai-course-label"
+              label="Course / service"
+              value={selectedSubject}
+              onChange={(event) => onSubjectChange(conversation.id, event.target.value)}
+            >
+              {learningCourses.map((course) => (
+                <MenuItem key={course.id} value={course.id} disabled={!course.searchEnabled}>
+                  {course.label}{!course.searchEnabled ? " (coming soon)" : ""}
+                </MenuItem>
+              ))}
+              <MenuItem disabled>Other existing services</MenuItem>
+              <MenuItem value="legacy">AT&amp;T Billing / Policy</MenuItem>
+              <MenuItem value="bible">Bible</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl fullWidth size="small" disabled={isLoading || !isEducationCourse}>
+            <InputLabel id="ai-grade-label">Grade</InputLabel>
+            <Select
+              labelId="ai-grade-label"
+              label="Grade"
+              value={selectedGrade}
+              onChange={(event) => onGradeChange(conversation.id, Number(event.target.value))}
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
+                <MenuItem key={grade} value={grade}>Grade {grade}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+        {isEducationCourse && (
+          <>
+            <FormControl fullWidth size="small" sx={{ mb: 1 }} disabled={isLoading}>
+              <InputLabel id="ai-learning-mode-label">Learning mode</InputLabel>
+              <Select
+                labelId="ai-learning-mode-label"
+                label="Learning mode"
+                value={learningMode}
+                onChange={(event) => onLearningModeChange(conversation.id, event.target.value)}
+              >
+                {learningModes.map((mode) => (
+                  <MenuItem key={mode.id} value={mode.id}>{mode.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {learningMode !== "resources" && (
+              <Alert severity="info" sx={{ mb: 1 }}>
+                Guided explanations and progressive hints are planned features. For now,
+                this mode searches existing learning resources; it does not generate a personalized tutorial.
+              </Alert>
+            )}
+            <Typography variant="caption" color={colors.grey[300]} sx={{ display: "block", mb: 1 }}>
+              {availableCourse?.label} search is available. Grade {selectedGrade} is a display preference;
+              grade-filtered retrieval is not enabled yet.
+            </Typography>
+            {exampleQuestions.length > 0 && (
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mb: 1.5 }}>
+                {exampleQuestions.map((question) => (
+                  <Chip
+                    key={question}
+                    label={question}
+                    size="small"
+                    onClick={() => setInput(question)}
+                    disabled={isLoading}
+                    variant="outlined"
+                    sx={{ maxWidth: "100%", "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis" } }}
+                  />
+                ))}
+              </Box>
+            )}
+          </>
+        )}
         {error && (
           <Alert
             severity="error"

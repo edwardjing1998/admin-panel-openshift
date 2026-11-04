@@ -17,18 +17,17 @@ import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import userImage from "../../../assets/images/user.png";
-const Item = ({ title, to, icon, selected, setSelected }) => {
+const Item = ({ title, to, icon, selected }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   return (
     <MenuItem
-      active={selected === title}
+      active={selected === to}
       style={{
         color: colors.grey[100],
       }}
-      onClick={() => setSelected(title)}
       icon={icon}
       component={<Link to={to} />}
     >
@@ -43,7 +42,8 @@ function Sidebar() {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setCollapsed] = useState(false);
-  const [selected, setSelected] = useState("dashboard");
+  const location = useLocation();
+  const selected = `${location.pathname}${location.search}`;
 
   return (
     <div className="sidebar">
@@ -113,7 +113,7 @@ function Sidebar() {
                   ml="15px"
                 >
                   <Typography variant="h3" color={colors.grey[100]}>
-                    ADMINIS
+                    AI LEARNING
                   </Typography>
                   <IconButton onClick={() => setCollapsed(!isCollapsed)}>
                     <MenuOutlinedIcon />
@@ -155,111 +155,49 @@ function Sidebar() {
               </Box>
             )}
             <Box paddingLeft={isCollapsed ? undefined : "10%"}>
-              <Item
-                title="Dashboard"
-                to="/"
-                icon={<HomeOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Typography
-                variant="h6"
-                color={colors.grey[300]}
-                sx={{ m: "15px 0px 5px 20px" }}
-              >
-                Data
+              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
+                Learning Hub
               </Typography>
-              <Item
-                title="Manage Team"
-                to="/team"
-                icon={<PeopleOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Item
-                title="Contacts Information"
-                to="/contact"
-                icon={<ContactsOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Item
-                title="Invoices Balances"
-                to="/invoices"
-                icon={<ReceiptOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Typography
-                variant="h6"
-                color={colors.grey[300]}
-                sx={{ m: "15px 0px 5px 20px" }}
-              >
-                Pages
+              <Item title="Learning Home" to="/" icon={<HomeOutlinedIcon />} selected={selected} />
+              <Item title="Learning Calendar" to="/calendar" icon={<CalendarTodayOutlinedIcon />} selected={selected} />
+
+              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
+                Courses
               </Typography>
-              <Item
-                title="Profile Form"
-                to="/form"
-                icon={<PersonOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Item
-                title="Calendar"
-                to="/calendar"
-                icon={<CalendarTodayOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Item
-                title="FAQ Page"
-                to="/faq"
-                icon={<HelpOutlineOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Item
-                title="Maths Section"
-                to="/maths"
-                icon={<CalculateOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Typography
-                variant="h6"
-                color={colors.grey[300]}
-                sx={{ m: "15px 0px 5px 20px" }}
-              >
-                Graphs
+              <Item title="Mathematics" to="/maths" icon={<CalculateOutlinedIcon />} selected={selected} />
+
+              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
+                Portfolio
               </Typography>
-              <Item
-                title="Bar Chart"
-                to="/bar"
-                icon={<BarChartOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Item
-                title="Pie Chart"
-                to="/pie"
-                icon={<PieChartOutlineOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Item
-                title="Line Chart"
-                to="/line"
-                icon={<TimelineOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
-              <Item
-                title="Geography Chart"
-                to="/geography"
-                icon={<MapOutlinedIcon />}
-                selected={selected}
-                setSelected={setSelected}
-              />
+              <Item title="Saved Exercises" to="/maths?tab=mywork" icon={<ReceiptOutlinedIcon />} selected={selected} />
+
+              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
+                Progress
+              </Typography>
+              <Item title="Maths Progress" to="/maths?tab=progress" icon={<BarChartOutlinedIcon />} selected={selected} />
+
+              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
+                Explore
+              </Typography>
+              <Item title="Explore Mathematics" to="/maths?tab=overview" icon={<MapOutlinedIcon />} selected={selected} />
+
+              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
+                Learning Support
+              </Typography>
+              <Item title="AI Learning Assistant" to="/learning-assistant" icon={<HelpOutlineOutlinedIcon />} selected={selected} />
+
+              {/* Preserve original admin-template features until they are replaced by education APIs. */}
+              <Typography variant="h6" color={colors.grey[300]} sx={{ m: "15px 0px 5px 20px" }}>
+                Administration & Tools
+              </Typography>
+              <Item title="Manage Team" to="/team" icon={<PeopleOutlinedIcon />} selected={selected} />
+              <Item title="Contacts Information" to="/contact" icon={<ContactsOutlinedIcon />} selected={selected} />
+              <Item title="Invoices Balances" to="/invoices" icon={<ReceiptOutlinedIcon />} selected={selected} />
+              <Item title="Profile Form" to="/form" icon={<PersonOutlinedIcon />} selected={selected} />
+              <Item title="Bar Chart" to="/bar" icon={<BarChartOutlinedIcon />} selected={selected} />
+              <Item title="Pie Chart" to="/pie" icon={<PieChartOutlineOutlinedIcon />} selected={selected} />
+              <Item title="Line Chart" to="/line" icon={<TimelineOutlinedIcon />} selected={selected} />
+              <Item title="Geography Chart" to="/geography" icon={<MapOutlinedIcon />} selected={selected} />
             </Box>
           </Menu>
         </MySidebar>

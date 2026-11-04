@@ -25,7 +25,7 @@ function Faq() {
   const [conversations, setConversations] = useState(
     initialChatHistories.map((item) => ({ ...item, subject: item.subject || "legacy" }))
   );
-  const [selectedId, setSelectedId] = useState(initialChatHistories[0].id);
+  const [selectedId, setSelectedId] = useState(initialChatHistories[0]?.id || null);
 
   const selectedConversation =
     conversations.find((conversation) => conversation.id === selectedId) ||
@@ -48,7 +48,9 @@ function Faq() {
       title: "New conversation",
       updatedAt: "Just now",
       group: "Today",
-      subject: "legacy",
+      subject: "mathematics",
+      grade: 3,
+      learningMode: "resources",
       messages: [welcomeMessage],
     };
 
@@ -86,11 +88,19 @@ function Faq() {
     );
   };
 
+  const updateConversationSetting = (conversationId, field, value) => {
+    setConversations((current) =>
+      current.map((item) =>
+        item.id === conversationId ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
   return (
     <Box m="0.5rem 1rem 1.5rem">
       <Header
-        title="AI CHAT"
-        subtitle="Continue a previous conversation or start a new one"
+        title="AI Learning Assistant"
+        subtitle="Ask questions and explore learning resources across courses"
       />
 
       <Box
@@ -176,6 +186,8 @@ function Faq() {
           conversation={selectedConversation}
           onMessagesChange={handleMessagesChange}
           onSubjectChange={handleSubjectChange}
+          onGradeChange={(id, grade) => updateConversationSetting(id, "grade", grade)}
+          onLearningModeChange={(id, mode) => updateConversationSetting(id, "learningMode", mode)}
         />
       </Box>
     </Box>
