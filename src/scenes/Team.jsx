@@ -24,7 +24,16 @@ import { mockDataTeam } from "../data/mockData";
 import Header from "../components/Header";
 import InteractiveLesson from "../components/InteractiveLesson";
 
-const INITIAL_LESSON_ID = "7b4cd83c-2d75-4fc4-afe5-27e2d43cf419";
+const INTERACTIVE_LESSONS = [
+  {
+    id: "7b4cd83c-2d75-4fc4-afe5-27e2d43cf419",
+    label: "Lesson 1 — Existing Mathematics Lesson",
+  },
+  {
+    id: "ff802c0e-7182-408c-8031-3ce8c1a31169",
+    label: "Lesson 2 — Base-Ten Blocks",
+  },
+];
 const INITIAL_JOB_ID = "c1bb7c47b28b4694887dad8e81c6cbe8";
 const JOB_ID_PATTERN = /^[a-f0-9]{32}$/i;
 
@@ -120,6 +129,8 @@ function VideoPreview({ active }) {
 function LearningResourcePreview() {
   const [tab, setTab] = useState(0);
   const [lessonOpened, setLessonOpened] = useState(false);
+  const [activeLesson, setActiveLesson] = useState(0);
+  const [openedLessons, setOpenedLessons] = useState([true, false]);
 
   const changeTab = (_event, nextTab) => {
     setTab(nextTab);
@@ -147,7 +158,45 @@ function LearningResourcePreview() {
         <VideoPreview active={tab === 0} />
       </Box>
       <Box id="resource-panel-1" role="tabpanel" aria-labelledby="resource-tab-1" hidden={tab !== 1}>
-        {lessonOpened && <InteractiveLesson lessonId={INITIAL_LESSON_ID} />}
+        {lessonOpened && (
+          <Box>
+            <Typography variant="body2" color="text.secondary" mt={2} mb={1}>
+              Choose a published mathematics exercise to preview.
+            </Typography>
+            <Tabs
+              value={activeLesson}
+              onChange={(_event, nextLesson) => {
+                setActiveLesson(nextLesson);
+                setOpenedLessons((previous) => previous.map((opened, index) =>
+                  opened || index === nextLesson
+                ));
+              }}
+              aria-label="Interactive mathematics lesson selection"
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              {INTERACTIVE_LESSONS.map((lesson, index) => (
+                <Tab
+                  key={lesson.id}
+                  label={lesson.label}
+                  id={`math-lesson-tab-${index}`}
+                  aria-controls={`math-lesson-panel-${index}`}
+                />
+              ))}
+            </Tabs>
+            {INTERACTIVE_LESSONS.map((lesson, index) => (
+              <Box
+                key={lesson.id}
+                id={`math-lesson-panel-${index}`}
+                role="tabpanel"
+                aria-labelledby={`math-lesson-tab-${index}`}
+                hidden={activeLesson !== index}
+              >
+                {openedLessons[index] && <InteractiveLesson lessonId={lesson.id} />}
+              </Box>
+            ))}
+          </Box>
+        )}
       </Box>
     </Box>
   );
