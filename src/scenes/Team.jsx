@@ -25,37 +25,31 @@ const JOB_ID_PATTERN = /^[a-f0-9]{32}$/i;
 
 function VideoPreview() {
   const [jobId, setJobId] = useState(INITIAL_JOB_ID);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [playbackUrl, setPlaybackUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const validJobId = JOB_ID_PATTERN.test(jobId.trim());
 
   const loadVideo = async () => {
-    if (!validJobId || !username || !password) return;
+    if (!validJobId) return;
     setError("");
     setPlaybackUrl("");
     setIsLoading(true);
     try {
-      // Pilot preview credentials are entered at runtime and sent only to this
-      // same-origin server-side proxy. The upstream editor key is never in JS.
-      const authorization = `Basic ${btoa(`${username}:${password}`)}`;
+      // No browser-side editor key or shared preview credentials.
+      // Server restricts requests to the configured pilot video job IDs.
       const response = await fetch(
         `/api/team/videos/${jobId.trim()}/playback-url`,
-        { headers: { Authorization: authorization }, cache: "no-store" }
+        { cache: "no-store" }
       );
       if (!response.ok) {
         throw new Error(
-          response.status === 401
-            ? "Incorrect preview credentials."
-            : `Could not authorize video playback (HTTP ${response.status}).`
+          `Could not load video preview (HTTP ${response.status}).`
         );
       }
       const data = await response.json();
       if (!data.playback_url) throw new Error("No video URL was returned.");
       setPlaybackUrl(data.playback_url);
-      setPassword("");
     } catch (err) {
       setError(err.message || "Unable to load video.");
     } finally {
@@ -83,21 +77,17 @@ function VideoPreview() {
           error={Boolean(jobId) && !validJobId}
           sx={{ width: { xs: "100%", md: 360 } }}
         />
-        <TextField label="Preview username" size="small" value={username}
-          autoComplete="username" onChange={(event) => setUsername(event.target.value)} />
-        <TextField label="Preview password" type="password" size="small"
-          value={password} autoComplete="off"
-          onChange={(event) => setPassword(event.target.value)} />
         <Button variant="contained" onClick={loadVideo} disabled={
-          isLoading || !validJobId || !username || !password
+          isLoading || !validJobId
         }>
           {isLoading ? "Loading..." : "Preview via Video API"}
         </Button>
       </Stack>
       <Alert severity="info" sx={{ mt: 2 }}>
-        The editor key is stored only in an OpenShift Secret. For this pilot,
-        enter the separate preview username and password configured in OpenShift.
-        Do not use shared preview credentials for student accounts.
+        No separate preview username or password is needed. The editor key stays
+        in an OpenShift Secret. This pilot can preview only the video job IDs
+        approved by the server; configure authenticated access before assigning
+        videos to individual members.
       </Alert>
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
       {playbackUrl && (

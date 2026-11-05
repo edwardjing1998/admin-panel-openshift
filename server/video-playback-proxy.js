@@ -1,11 +1,10 @@
 "use strict";
 
 // Server-only bridge. Never expose EDITOR_API_KEY to the browser.
-// Pilot authentication uses separate admin preview credentials. Replace with
-// a verified per-user identity + assignment authorization before student use.
+// Pilot allows ONLY explicitly allowlisted video job IDs. This route is not
+// user-authenticated: protect it with SSO before enabling member-specific videos.
 const http = require("node:http");
 const https = require("node:https");
-const crypto = require("node:crypto");
 
 const HOST = "127.0.0.1";
 const PORT = 8081;
@@ -14,26 +13,13 @@ const VIDEO_API_BASE = process.env.MATH_VIDEO_API_BASE ||
 const JOB_ID_RE = /^[a-f0-9]{32}$/i;
 const PATH_RE = /^\/api\/team\/videos\/([a-f0-9]{32})\/playback-url\/?$/i;
 
-function sameSecret(left, right) {
-  const a = crypto.createHash("sha256").update(left).digest();
-  const b = crypto.createHash("sha256").update(right).digest();
-  return crypto.timingSafeEqual(a, b);
-}
-
-function isAuthenticated(header) {
-  if (!header || !header.startsWith("Basic ")) return false;
-  try {
-    const input = Buffer.from(header.slice(6), "base64").toString("utf8");
-    const colon = input.indexOf(":");
-    if (colon < 0) return false;
-    const user = input.slice(0, colon);
-    const password = input.slice(colon + 1);
-    const expectedUser = process.env.VIDEO_PREVIEW_USERNAME || "";
-    const expectedPassword = process.env.VIDEO_PREVIEW_PASSWORD || "";
-    return Boolean(expectedUser && expectedPassword) &&
-      sameSecret(user, expectedUser) && sameSecret(password, expectedPassword);
-  } catch (_) { return false; }
-}
+// Fail closed unless a server-configured list of video IDs is present.
+const ALLOWED_JOB_IDS = new Set(
+  (process.env.VIDEO_PREVIEW_JOB_IDS || "")
+    .split(",")
+    .map((id) => id.trim().toLowerCase())
+    .filter((id) => JOB_ID_RE.test(id))
+);
 
 function respond(res, status, data, headers = {}) {
   res.writeHead(status, {
@@ -92,10 +78,8 @@ function fetchSignedUrl(jobId, res) {
   });
 }
 
-if (!process.env.EDITOR_API_KEY ||
-    !process.env.VIDEO_PREVIEW_USERNAME ||
-    !process.env.VIDEO_PREVIEW_PASSWORD) {
-  console.error("Missing required server-side video proxy secrets");
+if (!process.env.EDITOR_API_KEY || ALLOWED_JOB_IDS.size === 0) {
+  console.error("Missing EDITOR_API_KEY or VIDEO_PREVIEW_JOB_IDS allowlist");
   process.exit(1);
 }
 
@@ -109,8 +93,8 @@ http.createServer((req, res) => {
     respond(res, 404, {error: "Not found"});
     return;
   }
-  if (!isAuthenticated(req.headers.authorization)) {
-    respond(res, 401, {error: "Preview sign-in required"});
+  if (!ALLOWED_JOB_IDS.has(match[1].toLowerCase())) {
+    respond(res, 404, {error: "Video not available for preview"});
     return;
   }
   fetchSignedUrl(match[1], res);
