@@ -1,9 +1,11 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
   Button,
   Chip,
+  MenuItem,
   Stack,
   Tab,
   Tabs,
@@ -24,51 +26,66 @@ import { mockDataTeam } from "../data/mockData";
 import Header from "../components/Header";
 import InteractiveLesson from "../components/InteractiveLesson";
 
-const INTERACTIVE_LESSONS = [
+const LEARNING_RESOURCES = [
   {
-    id: "7b4cd83c-2d75-4fc4-afe5-27e2d43cf419",
-    label: "Lesson 1 — Existing Mathematics Lesson",
+    id: "lesson-1",
+    label: "Existing Mathematics Lesson",
+    lessonId: "7b4cd83c-2d75-4fc4-afe5-27e2d43cf419",
+    jobId: "c1bb7c47b28b4694887dad8e81c6cbe8",
   },
   {
-    id: "ff802c0e-7182-408c-8031-3ce8c1a31169",
-    label: "Lesson 2 — Base-Ten Blocks",
+    id: "lesson-2",
+    label: "New Mathematics Lesson",
+    lessonId: "069c9199-6733-44a2-bcb0-ae169dc80c2a",
+    jobId: "00482c76df644395953df276b491a99c",
   },
 ];
-const INITIAL_JOB_ID = "c1bb7c47b28b4694887dad8e81c6cbe8";
+
 const JOB_ID_PATTERN = /^[a-f0-9]{32}$/i;
 
-function VideoPreview({ active }) {
+function VideoPreview({ active, initialJobId }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (!active && videoRef.current) videoRef.current.pause();
+    if (!active && videoRef.current) {
+      videoRef.current.pause();
+    }
   }, [active]);
 
-  const [jobId, setJobId] = useState(INITIAL_JOB_ID);
+  const [jobId, setJobId] = useState(initialJobId);
   const [playbackUrl, setPlaybackUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
   const validJobId = JOB_ID_PATTERN.test(jobId.trim());
 
   const loadVideo = async () => {
     if (!validJobId) return;
+
     setError("");
     setPlaybackUrl("");
     setIsLoading(true);
+
     try {
-      // No browser-side editor key or shared preview credentials.
-      // Server restricts requests to the configured pilot video job IDs.
+      // Credentials remain on the server.
+      // The proxy restricts playback to approved video job IDs.
       const response = await fetch(
         `/api/team/videos/${jobId.trim()}/playback-url`,
         { cache: "no-store" }
       );
+
       if (!response.ok) {
         throw new Error(
           `Could not load video preview (HTTP ${response.status}).`
         );
       }
+
       const data = await response.json();
-      if (!data.playback_url) throw new Error("No video URL was returned.");
+
+      if (!data.playback_url) {
+        throw new Error("No video URL was returned.");
+      }
+
       setPlaybackUrl(data.playback_url);
     } catch (err) {
       setError(err.message || "Unable to load video.");
@@ -78,47 +95,113 @@ function VideoPreview({ active }) {
   };
 
   return (
-    <Box mt={3} p={3} border={1} borderColor="divider" borderRadius={2}>
+    <Box
+      mt={3}
+      p={3}
+      border={1}
+      borderColor="divider"
+      borderRadius={2}
+    >
       <Stack direction="row" spacing={1} alignItems="center">
         <PlayCircleOutline color="primary" />
-        <Typography variant="h5" fontWeight={600}>Learning Video Preview</Typography>
-        <Chip label="Admin pilot" size="small" variant="outlined" />
+        <Typography variant="h5" fontWeight={600}>
+          Learning Video Preview
+        </Typography>
+        <Chip
+          label="Admin pilot"
+          size="small"
+          variant="outlined"
+        />
       </Stack>
-      <Typography color="text.secondary" variant="body2" mt={1}>
-        Preview a published mathematics video using server-side OpenShift credentials.
-        Team-member learning assignments will be added in a later phase.
+
+      <Typography
+        color="text.secondary"
+        variant="body2"
+        mt={1}
+      >
+        Preview a published mathematics video using
+        server-side OpenShift credentials.
+        Team-member learning assignments will be
+        added in a later phase.
       </Typography>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mt={3} alignItems="start">
+
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={2}
+        mt={3}
+        alignItems="start"
+      >
         <TextField
           label="Video job ID"
           value={jobId}
           size="small"
-          onChange={(event) => {setJobId(event.target.value); setPlaybackUrl("");}}
+          onChange={(event) => {
+            setJobId(event.target.value);
+            setPlaybackUrl("");
+          }}
           error={Boolean(jobId) && !validJobId}
-          sx={{ width: { xs: "100%", md: 360 } }}
+          sx={{
+            width: { xs: "100%", md: 360 },
+          }}
         />
-        <Button variant="contained" onClick={loadVideo} disabled={
-          isLoading || !validJobId
-        }>
-          {isLoading ? "Loading..." : "Preview via Video API"}
+
+        <Button
+          variant="contained"
+          onClick={loadVideo}
+          disabled={isLoading || !validJobId}
+        >
+          {isLoading
+            ? "Loading..."
+            : "Preview via Video API"}
         </Button>
       </Stack>
+
       <Alert severity="info" sx={{ mt: 2 }}>
-        No separate preview username or password is needed. The editor key stays
-        in an OpenShift Secret. This pilot can preview only the video job IDs
-        approved by the server; configure authenticated access before assigning
-        videos to individual members.
+        No separate preview username or password is needed.
+        The editor key stays in an OpenShift Secret.
+        This pilot can preview only the video job IDs
+        approved by the server; configure authenticated
+        access before assigning videos to individual members.
       </Alert>
-      {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+
+      {error && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      )}
+
       {playbackUrl && (
         <Box mt={3} maxWidth={900}>
-          <Box component="video" ref={videoRef} key={playbackUrl} controls preload="metadata"
-            playsInline src={playbackUrl}
-            onError={() => setError("Video playback failed. The URL may have expired.")}
-            sx={{ display: "block", width: "100%", maxHeight: 520,
-              bgcolor: "black", borderRadius: 1 }} />
-          <Typography color="text.secondary" variant="caption" display="block" mt={1}>
-            Signed URLs expire automatically. Click Preview again to load a fresh video URL.
+          <Box
+            component="video"
+            ref={videoRef}
+            key={playbackUrl}
+            controls
+            preload="metadata"
+            playsInline
+            src={playbackUrl}
+            onError={() =>
+              setError(
+                "Video playback failed. The URL may have expired."
+              )
+            }
+            sx={{
+              display: "block",
+              width: "100%",
+              maxHeight: 520,
+              bgcolor: "black",
+              borderRadius: 1,
+            }}
+          />
+
+          <Typography
+            color="text.secondary"
+            variant="caption"
+            display="block"
+            mt={1}
+          >
+            Signed URLs expire automatically.
+            Click Preview again to load a fresh video URL.
           </Typography>
         </Box>
       )}
@@ -129,19 +212,58 @@ function VideoPreview({ active }) {
 function LearningResourcePreview() {
   const [tab, setTab] = useState(0);
   const [lessonOpened, setLessonOpened] = useState(false);
-  const [activeLesson, setActiveLesson] = useState(0);
-  const [openedLessons, setOpenedLessons] = useState([true, false]);
+
+  const [selectedResourceId, setSelectedResourceId] =
+    useState(LEARNING_RESOURCES[0].id);
+
+  const selectedResource =
+    LEARNING_RESOURCES.find(
+      (resource) => resource.id === selectedResourceId
+    ) ?? LEARNING_RESOURCES[0];
 
   const changeTab = (_event, nextTab) => {
     setTab(nextTab);
-    if (nextTab === 1) setLessonOpened(true);
+
+    if (nextTab === 1) {
+      setLessonOpened(true);
+    }
   };
 
   return (
     <Box mt={3}>
-      <Typography variant="h5" fontWeight={600} mb={1}>
+      <Typography
+        variant="h5"
+        fontWeight={600}
+        mb={1}
+      >
         Learning Resource Preview
       </Typography>
+
+      <TextField
+        select
+        fullWidth
+        size="small"
+        label="Select Learning Resource"
+        value={selectedResourceId}
+        onChange={(event) =>
+          setSelectedResourceId(event.target.value)
+        }
+        sx={{
+          mt: 2,
+          mb: 2,
+          maxWidth: 450,
+        }}
+      >
+        {LEARNING_RESOURCES.map((resource) => (
+          <MenuItem
+            key={resource.id}
+            value={resource.id}
+          >
+            {resource.label}
+          </MenuItem>
+        ))}
+      </TextField>
+
       <Tabs
         value={tab}
         onChange={changeTab}
@@ -149,53 +271,47 @@ function LearningResourcePreview() {
         variant="scrollable"
         scrollButtons="auto"
       >
-        <Tab icon={<PlayCircleOutline />} iconPosition="start" label="Video" id="resource-tab-0"
-          aria-controls="resource-panel-0" />
-        <Tab icon={<MenuBookOutlined />} iconPosition="start" label="Interactive Lesson"
-          id="resource-tab-1" aria-controls="resource-panel-1" />
+        <Tab
+          icon={<PlayCircleOutline />}
+          iconPosition="start"
+          label="Video"
+          id="resource-tab-0"
+          aria-controls="resource-panel-0"
+        />
+
+        <Tab
+          icon={<MenuBookOutlined />}
+          iconPosition="start"
+          label="Interactive Lesson"
+          id="resource-tab-1"
+          aria-controls="resource-panel-1"
+        />
       </Tabs>
-      <Box id="resource-panel-0" role="tabpanel" aria-labelledby="resource-tab-0" hidden={tab !== 0}>
-        <VideoPreview active={tab === 0} />
+
+      <Box
+        id="resource-panel-0"
+        role="tabpanel"
+        aria-labelledby="resource-tab-0"
+        hidden={tab !== 0}
+      >
+        <VideoPreview
+          key={selectedResource.id}
+          active={tab === 0}
+          initialJobId={selectedResource.jobId}
+        />
       </Box>
-      <Box id="resource-panel-1" role="tabpanel" aria-labelledby="resource-tab-1" hidden={tab !== 1}>
+
+      <Box
+        id="resource-panel-1"
+        role="tabpanel"
+        aria-labelledby="resource-tab-1"
+        hidden={tab !== 1}
+      >
         {lessonOpened && (
-          <Box>
-            <Typography variant="body2" color="text.secondary" mt={2} mb={1}>
-              Choose a published mathematics exercise to preview.
-            </Typography>
-            <Tabs
-              value={activeLesson}
-              onChange={(_event, nextLesson) => {
-                setActiveLesson(nextLesson);
-                setOpenedLessons((previous) => previous.map((opened, index) =>
-                  opened || index === nextLesson
-                ));
-              }}
-              aria-label="Interactive mathematics lesson selection"
-              variant="scrollable"
-              scrollButtons="auto"
-            >
-              {INTERACTIVE_LESSONS.map((lesson, index) => (
-                <Tab
-                  key={lesson.id}
-                  label={lesson.label}
-                  id={`math-lesson-tab-${index}`}
-                  aria-controls={`math-lesson-panel-${index}`}
-                />
-              ))}
-            </Tabs>
-            {INTERACTIVE_LESSONS.map((lesson, index) => (
-              <Box
-                key={lesson.id}
-                id={`math-lesson-panel-${index}`}
-                role="tabpanel"
-                aria-labelledby={`math-lesson-tab-${index}`}
-                hidden={activeLesson !== index}
-              >
-                {openedLessons[index] && <InteractiveLesson lessonId={lesson.id} />}
-              </Box>
-            ))}
-          </Box>
+          <InteractiveLesson
+            key={selectedResource.lessonId}
+            lessonId={selectedResource.lessonId}
+          />
         )}
       </Box>
     </Box>
@@ -205,16 +321,40 @@ function LearningResourcePreview() {
 function Team() {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
   const columns = [
-    { field: "id", headerName: "ID" },
-    { field: "name", headerName: "Name", flex: 1, cellClassName: "name-column--cell" },
-    { field: "age", headerName: "Age", type: "number", align: "left", headerAlign: "left" },
-    { field: "phone", headerName: "Phone Number", flex: 1 },
-    { field: "email", headerName: "Email", flex: 1 },
+    {
+      field: "id",
+      headerName: "ID",
+    },
+    {
+      field: "name",
+      headerName: "Name",
+      flex: 1,
+      cellClassName: "name-column--cell",
+    },
+    {
+      field: "age",
+      headerName: "Age",
+      type: "number",
+      align: "left",
+      headerAlign: "left",
+    },
+    {
+      field: "phone",
+      headerName: "Phone Number",
+      flex: 1,
+    },
+    {
+      field: "email",
+      headerName: "Email",
+      flex: 1,
+    },
     {
       field: "access",
       headerName: "Access Level",
       flex: 1,
+
       renderCell: ({ row: { access } }) => (
         <Box
           width="60%"
@@ -223,14 +363,28 @@ function Team() {
           display="flex"
           justifyContent="center"
           backgroundColor={
-            access === "Admin" ? colors.greenAccent[600] : colors.greenAccent[700]
+            access === "Admin"
+              ? colors.greenAccent[600]
+              : colors.greenAccent[700]
           }
           borderRadius="5px"
         >
-          {access === "admin" && <AdminPanelSettingsOutlined />}
-          {access === "manager" && <SecurityOutlined />}
-          {access === "user" && <LockOpenOutlined />}
-          <Typography color={colors.grey[100]} sx={{ ml: "0.2rem" }}>
+          {access === "admin" && (
+            <AdminPanelSettingsOutlined />
+          )}
+
+          {access === "manager" && (
+            <SecurityOutlined />
+          )}
+
+          {access === "user" && (
+            <LockOpenOutlined />
+          )}
+
+          <Typography
+            color={colors.grey[100]}
+            sx={{ ml: "0.2rem" }}
+          >
             {access}
           </Typography>
         </Box>
@@ -240,28 +394,46 @@ function Team() {
 
   return (
     <Box m="0.5rem 1rem">
-      <Header title="TEAM" subtitle="Managing the team members" />
+      <Header
+        title="TEAM"
+        subtitle="Managing the team members"
+      />
+
       <LearningResourcePreview />
+
       <Box
         m="2rem 0 0 0"
         height="75vh"
         sx={{
-          "& .MuiDataGrid-root": { border: "none" },
-          "& .MuiDataGrid-cell": { borderBottom: "none" },
-          "& .name-column--cell": { color: colors.greenAccent[300] },
+          "& .MuiDataGrid-root": {
+            border: "none",
+          },
+          "& .MuiDataGrid-cell": {
+            borderBottom: "none",
+          },
+          "& .name-column--cell": {
+            color: colors.greenAccent[300],
+          },
           "& .MuiDataGrid-columnHeaders": {
             backgroundColor: colors.blueAccent[700],
             borderBottom: "none",
           },
-          "& .MuiDataGrid-virtualScroller": { backgroundColor: colors.primary[400] },
+          "& .MuiDataGrid-virtualScroller": {
+            backgroundColor: colors.primary[400],
+          },
           "& .MuiDataGrid-footerContainer": {
             borderTop: "none",
             backgroundColor: colors.blueAccent[700],
           },
-          "& .MuiCheckbox-root": { color: `${colors.greenAccent[200]} !important` },
+          "& .MuiCheckbox-root": {
+            color: `${colors.greenAccent[200]} !important`,
+          },
         }}
       >
-        <DataGrid rows={mockDataTeam} columns={columns} />
+        <DataGrid
+          rows={mockDataTeam}
+          columns={columns}
+        />
       </Box>
     </Box>
   );
