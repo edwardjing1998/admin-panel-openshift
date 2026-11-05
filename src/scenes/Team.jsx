@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
   Button,
   Chip,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
   useTheme,
@@ -13,17 +15,26 @@ import { DataGrid } from "@mui/x-data-grid";
 import {
   AdminPanelSettingsOutlined,
   LockOpenOutlined,
+  MenuBookOutlined,
   PlayCircleOutline,
   SecurityOutlined,
 } from "@mui/icons-material";
 import { tokens } from "../theme";
 import { mockDataTeam } from "../data/mockData";
 import Header from "../components/Header";
+import InteractiveLesson from "../components/InteractiveLesson";
 
+const INITIAL_LESSON_ID = "7b4cd83c-2d75-4fc4-afe5-27e2d43cf419";
 const INITIAL_JOB_ID = "c1bb7c47b28b4694887dad8e81c6cbe8";
 const JOB_ID_PATTERN = /^[a-f0-9]{32}$/i;
 
-function VideoPreview() {
+function VideoPreview({ active }) {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!active && videoRef.current) videoRef.current.pause();
+  }, [active]);
+
   const [jobId, setJobId] = useState(INITIAL_JOB_ID);
   const [playbackUrl, setPlaybackUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +103,7 @@ function VideoPreview() {
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
       {playbackUrl && (
         <Box mt={3} maxWidth={900}>
-          <Box component="video" key={playbackUrl} controls preload="metadata"
+          <Box component="video" ref={videoRef} key={playbackUrl} controls preload="metadata"
             playsInline src={playbackUrl}
             onError={() => setError("Video playback failed. The URL may have expired.")}
             sx={{ display: "block", width: "100%", maxHeight: 520,
@@ -102,6 +113,42 @@ function VideoPreview() {
           </Typography>
         </Box>
       )}
+    </Box>
+  );
+}
+
+function LearningResourcePreview() {
+  const [tab, setTab] = useState(0);
+  const [lessonOpened, setLessonOpened] = useState(false);
+
+  const changeTab = (_event, nextTab) => {
+    setTab(nextTab);
+    if (nextTab === 1) setLessonOpened(true);
+  };
+
+  return (
+    <Box mt={3}>
+      <Typography variant="h5" fontWeight={600} mb={1}>
+        Learning Resource Preview
+      </Typography>
+      <Tabs
+        value={tab}
+        onChange={changeTab}
+        aria-label="Learning resource preview tabs"
+        variant="scrollable"
+        scrollButtons="auto"
+      >
+        <Tab icon={<PlayCircleOutline />} iconPosition="start" label="Video" id="resource-tab-0"
+          aria-controls="resource-panel-0" />
+        <Tab icon={<MenuBookOutlined />} iconPosition="start" label="Interactive Lesson"
+          id="resource-tab-1" aria-controls="resource-panel-1" />
+      </Tabs>
+      <Box id="resource-panel-0" role="tabpanel" aria-labelledby="resource-tab-0" hidden={tab !== 0}>
+        <VideoPreview active={tab === 0} />
+      </Box>
+      <Box id="resource-panel-1" role="tabpanel" aria-labelledby="resource-tab-1" hidden={tab !== 1}>
+        {lessonOpened && <InteractiveLesson lessonId={INITIAL_LESSON_ID} />}
+      </Box>
     </Box>
   );
 }
@@ -145,7 +192,7 @@ function Team() {
   return (
     <Box m="0.5rem 1rem">
       <Header title="TEAM" subtitle="Managing the team members" />
-      <VideoPreview />
+      <LearningResourcePreview />
       <Box
         m="2rem 0 0 0"
         height="75vh"
