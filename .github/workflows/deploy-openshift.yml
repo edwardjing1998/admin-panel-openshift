@@ -128,6 +128,29 @@ jobs:
           echo "OpenShift client and server versions:"
           oc version
 
+      - name: Synchronize video editor key to OpenShift
+        shell: bash
+        env:
+          VIDEO_EDITOR_KEY: ${{ secrets.EDITOR_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${VIDEO_EDITOR_KEY:-}" ]; then
+            echo "Missing GitHub Actions secret: EDITOR_API_KEY"
+            exit 1
+          fi
+
+          # Pipe the key through stdin rather than including it in command arguments.
+          printf '%s' "$VIDEO_EDITOR_KEY" |
+            oc create secret generic admin-video-preview-secrets \
+              --from-file=editor-api-key=/dev/stdin \
+              --dry-run=client \
+              -o yaml |
+            oc apply -f -
+
+          oc get secret admin-video-preview-secrets \
+            -o jsonpath='{.metadata.name}{" created or updated"}{"\n"}'
+
       - name: Apply OpenShift build resources
         shell: bash
         run: |
