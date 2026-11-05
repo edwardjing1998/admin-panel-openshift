@@ -1,11 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Box,
   Button,
   Chip,
   Divider,
-  Link,
   Stack,
   TextField,
   Typography,
@@ -15,7 +14,6 @@ import { DataGrid } from "@mui/x-data-grid";
 import {
   AdminPanelSettingsOutlined,
   LockOpenOutlined,
-  OpenInNewOutlined,
   PlayCircleOutline,
   SecurityOutlined,
 } from "@mui/icons-material";
@@ -23,167 +21,96 @@ import { tokens } from "../theme";
 import { mockDataTeam } from "../data/mockData";
 import Header from "../components/Header";
 
-const VIDEO_API_BASE =
-  process.env.REACT_APP_MATH_VIDEO_API_BASE ||
-  "https://elementary-math-practice-v2-edward-jing-dev.apps.rm1.0a51.p1.openshiftapps.com";
 const INITIAL_JOB_ID = "c1bb7c47b28b4694887dad8e81c6cbe8";
 const JOB_ID_PATTERN = /^[a-f0-9]{32}$/i;
 
 function VideoPreview() {
   const [jobId, setJobId] = useState(INITIAL_JOB_ID);
-  const [azureUrlInput, setAzureUrlInput] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [playbackUrl, setPlaybackUrl] = useState("");
-  const [playerError, setPlayerError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const validJobId = JOB_ID_PATTERN.test(jobId.trim());
 
-  // The existing public /file endpoint is a download fallback. It avoids
-  // exposing the editor API key in a client-side application.
-  const fileUrl = useMemo(
-    () =>
-      validJobId
-        ? `${VIDEO_API_BASE.replace(/\/$/, "")}/api/v1/videos/${jobId.trim()}/file`
-        : "",
-    [jobId, validJobId]
-  );
-
-  const useAzureUrl = () => {
-    const candidate = azureUrlInput.trim();
-    let parsed;
+  const loadVideo = async () => {
+    if (!validJobId || !username || !password) return;
+    setError("");
+    setPlaybackUrl("");
+    setIsLoading(true);
     try {
-      parsed = new URL(candidate);
-    } catch {
-      setPlayerError(true);
-      return;
+      // Pilot preview credentials are entered at runtime and sent only to this
+      // same-origin server-side proxy. The upstream editor key is never in JS.
+      const authorization = `Basic ${btoa(`${username}:${password}`)}`;
+      const response = await fetch(
+        `/api/team/videos/${jobId.trim()}/playback-url`,
+        { headers: { Authorization: authorization }, cache: "no-store" }
+      );
+      if (!response.ok) {
+        throw new Error(
+          response.status === 401
+            ? "Incorrect preview credentials."
+            : `Could not authorize video playback (HTTP ${response.status}).`
+        );
+      }
+      const data = await response.json();
+      if (!data.playback_url) throw new Error("No video URL was returned.");
+      setPlaybackUrl(data.playback_url);
+      setPassword("");
+    } catch (err) {
+      setError(err.message || "Unable to load video.");
+    } finally {
+      setIsLoading(false);
     }
-    // Only accept HTTPS Azure Blob URLs; do not accept credentials in a URL.
-    if (
-      parsed.protocol !== "https:" ||
-      !parsed.hostname.endsWith(".blob.core.windows.net") ||
-      !parsed.searchParams.has("sig")
-    ) {
-      setPlayerError(true);
-      return;
-    }
-    setPlayerError(false);
-    setPlaybackUrl(candidate);
-  };
-
-  const useApiFile = () => {
-    if (!validJobId) return;
-    setPlayerError(false);
-    setPlaybackUrl(fileUrl);
   };
 
   return (
     <Box mt={3} p={3} border={1} borderColor="divider" borderRadius={2}>
-      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2}>
-        <Box>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <PlayCircleOutline color="primary" />
-            <Typography variant="h5" fontWeight={600}>
-              Learning Video Preview
-            </Typography>
-            <Chip label="Pilot" size="small" variant="outlined" />
-          </Stack>
-          <Typography color="text.secondary" variant="body2" mt={1}>
-            Preview the generated multiplication video. Assignments to team members,
-            textbooks, and exercises can be added in a later phase.
-          </Typography>
-        </Box>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <PlayCircleOutline color="primary" />
+        <Typography variant="h5" fontWeight={600}>Learning Video Preview</Typography>
+        <Chip label="Admin pilot" size="small" variant="outlined" />
       </Stack>
-
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} mt={3} alignItems="start">
+      <Typography color="text.secondary" variant="body2" mt={1}>
+        Preview a published mathematics video using server-side OpenShift credentials.
+        Team-member learning assignments will be added in a later phase.
+      </Typography>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mt={3} alignItems="start">
         <TextField
           label="Video job ID"
-          size="small"
           value={jobId}
-          onChange={(event) => {
-            setJobId(event.target.value);
-            setPlaybackUrl("");
-            setPlayerError(false);
-          }}
-          error={jobId.length > 0 && !validJobId}
-          helperText={jobId.length > 0 && !validJobId ? "Enter a 32-character video job ID" : ""}
-          sx={{ width: { xs: "100%", sm: 370 }, maxWidth: "100%" }}
-          inputProps={{ "aria-label": "Video job ID" }}
-        />
-        <Button variant="contained" onClick={useApiFile} disabled={!validJobId}>
-          Preview via Video API
-        </Button>
-        {validJobId && (
-          <Button
-            component="a"
-            href={fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            endIcon={<OpenInNewOutlined />}
-          >
-            Open / Download
-          </Button>
-        )}
-      </Stack>
-
-      <Divider sx={{ my: 3 }} />
-      <Typography variant="subtitle1" fontWeight={600}>
-        Direct Azure playback (temporary SAS URL)
-      </Typography>
-      <Typography color="text.secondary" variant="body2" mb={2}>
-        For this pilot, paste a fresh read-only URL from your trusted backend or Azure CLI.
-        The URL is used only in this page and is not saved or assigned to a team member.
-      </Typography>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="start">
-        <TextField
-          label="Temporary Azure video URL"
-          type="url"
           size="small"
-          value={azureUrlInput}
-          onChange={(event) => setAzureUrlInput(event.target.value)}
-          fullWidth
-          placeholder="https://...blob.core.windows.net/.../video.mp4?sv=...&sig=..."
-          inputProps={{ "aria-label": "Temporary Azure video URL", autoComplete: "off" }}
+          onChange={(event) => {setJobId(event.target.value); setPlaybackUrl("");}}
+          error={Boolean(jobId) && !validJobId}
+          sx={{ width: { xs: "100%", md: 360 } }}
         />
-        <Button variant="outlined" onClick={useAzureUrl} disabled={!azureUrlInput.trim()}>
-          Play from Azure
+        <TextField label="Preview username" size="small" value={username}
+          autoComplete="username" onChange={(event) => setUsername(event.target.value)} />
+        <TextField label="Preview password" type="password" size="small"
+          value={password} autoComplete="off"
+          onChange={(event) => setPassword(event.target.value)} />
+        <Button variant="contained" onClick={loadVideo} disabled={
+          isLoading || !validJobId || !username || !password
+        }>
+          {isLoading ? "Loading..." : "Preview via Video API"}
         </Button>
       </Stack>
       <Alert severity="info" sx={{ mt: 2 }}>
-        The playback-url REST endpoint requires a server-side editor key. Never put that
-        key in React environment variables or browser requests. A trusted authenticated
-        backend is needed for automatic SAS retrieval and future per-member access.
+        The editor key is stored only in an OpenShift Secret. For this pilot,
+        enter the separate preview username and password configured in OpenShift.
+        Do not use shared preview credentials for student accounts.
       </Alert>
-      {playerError && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          Could not load this video. Check the job ID, link expiration, and whether the
-          URL is a signed HTTPS Azure Blob URL. The video API may serve downloads
-          instead of inline playback.
-        </Alert>
-      )}
+      {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
       {playbackUrl && (
         <Box mt={3} maxWidth={900}>
-          <Box
-            component="video"
-            key={playbackUrl}
-            controls
-            preload="metadata"
-            playsInline
-            src={playbackUrl}
-            onError={() => setPlayerError(true)}
-            sx={{ display: "block", width: "100%", maxHeight: 520, bgcolor: "black", borderRadius: 1 }}
-          >
-            Your browser does not support HTML5 video.
-          </Box>
+          <Box component="video" key={playbackUrl} controls preload="metadata"
+            playsInline src={playbackUrl}
+            onError={() => setError("Video playback failed. The URL may have expired.")}
+            sx={{ display: "block", width: "100%", maxHeight: 520,
+              bgcolor: "black", borderRadius: 1 }} />
           <Typography color="text.secondary" variant="caption" display="block" mt={1}>
-            Azure SAS links expire. If playback stops, obtain a fresh URL.
+            Signed URLs expire automatically. Click Preview again to load a fresh video URL.
           </Typography>
-          {playbackUrl === fileUrl && (
-            <Typography variant="caption" display="block" mt={1}>
-              If the API serves this file as an attachment, use the{" "}
-              <Link href={fileUrl} target="_blank" rel="noopener noreferrer">
-                Open / Download
-              </Link>{" "}
-              action or choose direct Azure playback above.
-            </Typography>
-          )}
         </Box>
       )}
     </Box>
