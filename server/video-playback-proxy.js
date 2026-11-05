@@ -1,7 +1,7 @@
 "use strict";
 
 // Server-only bridge. Never expose EDITOR_API_KEY to the browser.
-// Pilot allows ONLY explicitly allowlisted video job IDs. This route is not
+// Pilot allows ONLY explicitly approved video job IDs. This route is not
 // user-authenticated: protect it with SSO before enabling member-specific videos.
 const http = require("node:http");
 const https = require("node:https");
@@ -13,13 +13,16 @@ const VIDEO_API_BASE = process.env.MATH_VIDEO_API_BASE ||
 const JOB_ID_RE = /^[a-f0-9]{32}$/i;
 const PATH_RE = /^\/api\/team\/videos\/([a-f0-9]{32})\/playback-url\/?$/i;
 
-// Fail closed unless a server-configured list of video IDs is present.
-const ALLOWED_JOB_IDS = new Set(
-  (process.env.VIDEO_PREVIEW_JOB_IDS || "")
-    .split(",")
-    .map((id) => id.trim().toLowerCase())
-    .filter((id) => JOB_ID_RE.test(id))
-);
+// Phase 1: server-side pilot allowlist. Later, replace this lookup with an
+// authenticated PostgreSQL learning-resource registry. Do not allow all IDs.
+const APPROVED_VIDEO_JOBS = new Set([
+  "c1bb7c47b28b4694887dad8e81c6cbe8",
+  "00482c76df644395953df276b491a99c",
+]);
+
+async function isApprovedVideoJob(jobId) {
+  return APPROVED_VIDEO_JOBS.has(jobId.toLowerCase());
+}
 
 function respond(res, status, data, headers = {}) {
   res.writeHead(status, {
@@ -78,12 +81,12 @@ function fetchSignedUrl(jobId, res) {
   });
 }
 
-if (!process.env.EDITOR_API_KEY || ALLOWED_JOB_IDS.size === 0) {
-  console.error("Missing EDITOR_API_KEY or VIDEO_PREVIEW_JOB_IDS allowlist");
+if (!process.env.EDITOR_API_KEY || APPROVED_VIDEO_JOBS.size === 0) {
+  console.error("Missing EDITOR_API_KEY or approved video-job allowlist");
   process.exit(1);
 }
 
-http.createServer((req, res) => {
+http.createServer(async (req, res) => {
   if (req.method !== "GET") {
     respond(res, 405, {error: "Method not allowed"});
     return;
@@ -93,7 +96,7 @@ http.createServer((req, res) => {
     respond(res, 404, {error: "Not found"});
     return;
   }
-  if (!ALLOWED_JOB_IDS.has(match[1].toLowerCase())) {
+  if (!(await isApprovedVideoJob(match[1]))) {
     respond(res, 404, {error: "Video not available for preview"});
     return;
   }
