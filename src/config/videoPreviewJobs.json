@@ -1,0 +1,36 @@
+
+{
+  "parents": [
+    {
+      "jobId": "00482c76df644395953df276b491a99c",
+      "label": "Existing Learning Video 1",
+      "tabs": []
+    },
+    {
+      "jobId": "c1bb7c47b28b4694887dad8e81c6cbe8",
+      "label": "Existing Learning Video 2",
+      "tabs": []
+    },
+    {
+      "jobId": "564551bd779b48cb95a0ce2014f396a8",
+      "label": "Base-Ten Blocks — Full Lesson",
+      "tabs": [
+        {
+          "id": "build",
+          "label": "Tab 1 — Build Equal Groups",
+          "jobId": "3ceae49526a84dcaad5e862bd9b0f29e"
+        },
+        {
+          "id": "trade",
+          "label": "Tab 2 — Trade Tens",
+          "jobId": "70087d0fcc844daaaf489c0017dfa93b"
+        },
+        {
+          "id": "solve",
+          "label": "Tab 3 — Solve",
+          "jobId": "9a39915d07b54a20bc21168f0041cc5a"
+        }
+      ]
+    }
+  ]
+}

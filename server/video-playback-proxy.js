@@ -5,6 +5,13 @@
 // user-authenticated: protect it with SSO before enabling member-specific videos.
 const http = require("node:http");
 const https = require("node:https");
+const fs = require("node:fs");
+const path = require("node:path");
+const deployedCatalog = path.join(__dirname, "video-preview-jobs.json");
+const localCatalog = path.join(__dirname, "../src/config/videoPreviewJobs.json");
+const videoPreviewJobs = require(
+  fs.existsSync(deployedCatalog) ? deployedCatalog : localCatalog
+);
 
 const HOST = "127.0.0.1";
 const PORT = 8081;
@@ -13,12 +20,34 @@ const VIDEO_API_BASE = process.env.MATH_VIDEO_API_BASE ||
 const JOB_ID_RE = /^[a-f0-9]{32}$/i;
 const PATH_RE = /^\/api\/team\/videos\/([a-f0-9]{32})\/playback-url\/?$/i;
 
-// Phase 1: server-side pilot allowlist. Later, replace this lookup with an
-// authenticated PostgreSQL learning-resource registry. Do not allow all IDs.
-const APPROVED_VIDEO_JOBS = new Set([
-  "c1bb7c47b28b4694887dad8e81c6cbe8",
-  "00482c76df644395953df276b491a99c",
-]);
+// Both the React selectors and this server allowlist come from the same catalog.
+// The Dockerfile copies the catalog here from src/config/videoPreviewJobs.json.
+// Keep only explicitly approved IDs; this proxy is not end-user authenticated.
+const APPROVED_VIDEO_JOBS = new Set();
+
+if (!videoPreviewJobs || !Array.isArray(videoPreviewJobs.parents)) {
+  throw new Error("Invalid video preview catalog: parents must be an array");
+}
+
+for (const parent of videoPreviewJobs.parents) {
+  if (!JOB_ID_RE.test(parent.jobId)) {
+    throw new Error("Invalid parent video job ID");
+  }
+
+  APPROVED_VIDEO_JOBS.add(parent.jobId.toLowerCase());
+
+  if (!Array.isArray(parent.tabs)) {
+    throw new Error("Invalid tab video catalog");
+  }
+
+  for (const tab of parent.tabs) {
+    if (!JOB_ID_RE.test(tab.jobId)) {
+      throw new Error("Invalid tab video job ID");
+    }
+
+    APPROVED_VIDEO_JOBS.add(tab.jobId.toLowerCase());
+  }
+}
 
 async function isApprovedVideoJob(jobId) {
   return APPROVED_VIDEO_JOBS.has(jobId.toLowerCase());

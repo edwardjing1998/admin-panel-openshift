@@ -25,6 +25,7 @@ import { tokens } from "../theme";
 import { mockDataTeam } from "../data/mockData";
 import Header from "../components/Header";
 import InteractiveLesson from "../components/InteractiveLesson";
+import videoPreviewJobs from "../config/videoPreviewJobs.json";
 
 const LEARNING_RESOURCES = [
   {
@@ -37,7 +38,7 @@ const LEARNING_RESOURCES = [
     id: "lesson-2",
     label: "New Mathematics Lesson",
     lessonId: "069c9199-6733-44a2-bcb0-ae169dc80c2a",
-    jobId: "00482c76df644395953df276b491a99c",
+    jobId: "564551bd779b48cb95a0ce2014f396a8",
   },
 ];
 
@@ -45,6 +46,20 @@ const JOB_ID_PATTERN = /^[a-f0-9]{32}$/i;
 
 function VideoPreview({ active, initialJobId }) {
   const videoRef = useRef(null);
+  const defaultParentId = videoPreviewJobs.some((item) => item.id === initialJobId)
+    ? initialJobId
+    : videoPreviewJobs[0].id;
+  const [parentJobId, setParentJobId] = useState(defaultParentId);
+  // Empty string means preview the selected parent (full-lesson) video.
+  const [tabJobId, setTabJobId] = useState("");
+  const [playbackUrl, setPlaybackUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const parentVideo = videoPreviewJobs.find((item) => item.id === parentJobId);
+  const selectedTab = parentVideo?.tabs.find((tab) => tab.jobId === tabJobId);
+  const selectedJobId = selectedTab?.jobId || parentJobId;
+  const validJobId = JOB_ID_PATTERN.test(selectedJobId);
 
   useEffect(() => {
     if (!active && videoRef.current) {
@@ -52,40 +67,31 @@ function VideoPreview({ active, initialJobId }) {
     }
   }, [active]);
 
-  const [jobId, setJobId] = useState(initialJobId);
-  const [playbackUrl, setPlaybackUrl] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const validJobId = JOB_ID_PATTERN.test(jobId.trim());
+  const clearPlayback = () => {
+    if (videoRef.current) videoRef.current.pause();
+    setPlaybackUrl("");
+    setError("");
+  };
 
   const loadVideo = async () => {
-    if (!validJobId) return;
+    if (!validJobId || isLoading) return;
 
-    setError("");
-    setPlaybackUrl("");
+    clearPlayback();
     setIsLoading(true);
 
     try {
-      // Credentials remain on the server.
-      // The proxy restricts playback to approved video job IDs.
+      // Editor credentials stay in the OpenShift proxy, never in the browser.
       const response = await fetch(
-        `/api/team/videos/${jobId.trim()}/playback-url`,
+        `/api/team/videos/${selectedJobId}/playback-url`,
         { cache: "no-store" }
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Could not load video preview (HTTP ${response.status}).`
-        );
+        throw new Error(`Could not load video preview (HTTP ${response.status}).`);
       }
 
       const data = await response.json();
-
-      if (!data.playback_url) {
-        throw new Error("No video URL was returned.");
-      }
-
+      if (!data.playback_url) throw new Error("No video URL was returned.");
       setPlaybackUrl(data.playback_url);
     } catch (err) {
       setError(err.message || "Unable to load video.");
@@ -95,80 +101,87 @@ function VideoPreview({ active, initialJobId }) {
   };
 
   return (
-    <Box
-      mt={3}
-      p={3}
-      border={1}
-      borderColor="divider"
-      borderRadius={2}
-    >
+    <Box mt={3} p={3} border={1} borderColor="divider" borderRadius={2}>
       <Stack direction="row" spacing={1} alignItems="center">
         <PlayCircleOutline color="primary" />
         <Typography variant="h5" fontWeight={600}>
           Learning Video Preview
         </Typography>
-        <Chip
-          label="Admin pilot"
-          size="small"
-          variant="outlined"
-        />
+        <Chip label="Admin pilot" size="small" variant="outlined" />
       </Stack>
 
-      <Typography
-        color="text.secondary"
-        variant="body2"
-        mt={1}
-      >
-        Preview a published mathematics video using
-        server-side OpenShift credentials.
-        Team-member learning assignments will be
-        added in a later phase.
+      <Typography color="text.secondary" variant="body2" mt={1}>
+        Select a full lesson video or an individual instructional tab.
+        The playback credentials remain on the OpenShift server.
       </Typography>
 
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={2}
         mt={3}
-        alignItems="start"
+        alignItems="flex-start"
       >
         <TextField
-          label="Video job ID"
-          value={jobId}
+          select
+          label="Video job ID (parent)"
           size="small"
+          value={parentJobId}
           onChange={(event) => {
-            setJobId(event.target.value);
-            setPlaybackUrl("");
+            setParentJobId(event.target.value);
+            setTabJobId("");
+            clearPlayback();
           }}
-          error={Boolean(jobId) && !validJobId}
-          sx={{
-            width: { xs: "100%", md: 360 },
+          sx={{ width: { xs: "100%", md: 380 } }}
+        >
+          {videoPreviewJobs.map((item) => (
+            <MenuItem key={item.id} value={item.id}>
+              {item.label} ({item.id})
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          label="Tab video job ID"
+          size="small"
+          value={tabJobId}
+          onChange={(event) => {
+            setTabJobId(event.target.value);
+            clearPlayback();
           }}
-        />
+          disabled={!parentVideo?.tabs.length}
+          helperText={parentVideo?.tabs.length ? "Choose a tab, or play the parent video." : "No tab videos for this parent."}
+          sx={{ width: { xs: "100%", md: 380 } }}
+        >
+          <MenuItem value="">Full lesson (parent video)</MenuItem>
+          {(parentVideo?.tabs || []).map((tab) => (
+            <MenuItem key={tab.jobId} value={tab.jobId}>
+              {tab.label} ({tab.jobId})
+            </MenuItem>
+          ))}
+        </TextField>
 
         <Button
           variant="contained"
           onClick={loadVideo}
           disabled={isLoading || !validJobId}
+          sx={{ minHeight: 40, whiteSpace: "nowrap" }}
         >
-          {isLoading
-            ? "Loading..."
-            : "Preview via Video API"}
+          {isLoading ? "Loading..." : "Preview via Video API"}
         </Button>
       </Stack>
 
+      <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+        Selected video job: {selectedJobId}
+      </Typography>
+
       <Alert severity="info" sx={{ mt: 2 }}>
-        No separate preview username or password is needed.
-        The editor key stays in an OpenShift Secret.
-        This pilot can preview only the video job IDs
-        approved by the server; configure authenticated
-        access before assigning videos to individual members.
+        No separate preview password is needed. The editor key stays in an
+        OpenShift Secret. Only jobs approved by the server are available for
+        preview; configure authenticated access before member-specific rollout.
       </Alert>
 
-      {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
 
       {playbackUrl && (
         <Box mt={3} maxWidth={900}>
@@ -180,28 +193,11 @@ function VideoPreview({ active, initialJobId }) {
             preload="metadata"
             playsInline
             src={playbackUrl}
-            onError={() =>
-              setError(
-                "Video playback failed. The URL may have expired."
-              )
-            }
-            sx={{
-              display: "block",
-              width: "100%",
-              maxHeight: 520,
-              bgcolor: "black",
-              borderRadius: 1,
-            }}
+            onError={() => setError("Video playback failed. The URL may have expired.")}
+            sx={{ display: "block", width: "100%", maxHeight: 520, bgcolor: "black", borderRadius: 1 }}
           />
-
-          <Typography
-            color="text.secondary"
-            variant="caption"
-            display="block"
-            mt={1}
-          >
-            Signed URLs expire automatically.
-            Click Preview again to load a fresh video URL.
+          <Typography color="text.secondary" variant="caption" display="block" mt={1}>
+            Signed URLs expire automatically. Click Preview again to load a fresh URL.
           </Typography>
         </Box>
       )}

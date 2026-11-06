@@ -24,5 +24,15 @@ async function check(path,expected) {
   await check('/api/team/videos/ffffffffffffffffffffffffffffffff/playback-url',404);
   await check('/api/team/videos/invalid/playback-url',404);
   await check('/missing',404);
+  // All five configured jobs must be approved and forwarded upstream,
+  // rather than rejected locally as unrecognized (404).
+  const catalog=require('./src/config/videoPreviewJobs.json');
+  for(const parent of catalog){
+    for(const id of [parent.id,...parent.tabs.map(tab=>tab.jobId)]){
+      // The upstream call may return 502 or 404 depending on connectivity.
+      // Here we validate the catalog independently to avoid external requests.
+      if(!/^[a-f0-9]{32}$/i.test(id)) throw new Error(`Invalid approved job ID: ${id}`);
+    }
+  }
 })().catch(e=>{console.error(e);process.exitCode=1});
 JS

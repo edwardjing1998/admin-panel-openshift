@@ -23,6 +23,7 @@ USER 101
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY server /opt/admin-video-proxy
+COPY src/config/videoPreviewJobs.json /opt/admin-video-proxy/video-preview-jobs.json
 COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 8080
