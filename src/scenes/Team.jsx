@@ -27,6 +27,8 @@ import Header from "../components/Header";
 import InteractiveLesson from "../components/InteractiveLesson";
 import videoPreviewJobs from "../config/videoPreviewJobs.json";
 
+const parentVideoJobs = videoPreviewJobs.parents;
+
 const LEARNING_RESOURCES = [
   {
     id: "lesson-1",
@@ -46,9 +48,9 @@ const JOB_ID_PATTERN = /^[a-f0-9]{32}$/i;
 
 function VideoPreview({ active, initialJobId }) {
   const videoRef = useRef(null);
-  const defaultParentId = videoPreviewJobs.some((item) => item.id === initialJobId)
+  const defaultParentId = parentVideoJobs.some((item) => item.jobId === initialJobId)
     ? initialJobId
-    : videoPreviewJobs[0].id;
+    : parentVideoJobs[0].jobId;
   const [parentJobId, setParentJobId] = useState(defaultParentId);
   // Empty string means preview the selected parent (full-lesson) video.
   const [tabJobId, setTabJobId] = useState("");
@@ -56,7 +58,7 @@ function VideoPreview({ active, initialJobId }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const parentVideo = videoPreviewJobs.find((item) => item.id === parentJobId);
+  const parentVideo = parentVideoJobs.find((item) => item.jobId === parentJobId);
   const selectedTab = parentVideo?.tabs.find((tab) => tab.jobId === tabJobId);
   const selectedJobId = selectedTab?.jobId || parentJobId;
   const validJobId = JOB_ID_PATTERN.test(selectedJobId);
@@ -133,9 +135,9 @@ function VideoPreview({ active, initialJobId }) {
           }}
           sx={{ width: { xs: "100%", md: 380 } }}
         >
-          {videoPreviewJobs.map((item) => (
-            <MenuItem key={item.id} value={item.id}>
-              {item.label} ({item.id})
+          {parentVideoJobs.map((item) => (
+            <MenuItem key={item.jobId} value={item.jobId}>
+              {item.label} ({item.jobId})
             </MenuItem>
           ))}
         </TextField>
